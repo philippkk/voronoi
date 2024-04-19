@@ -1,0 +1,31 @@
+#pragma kernel CSMain
+
+// Texture to write the parabola points
+RWTexture3D<float4> Result;
+float3 start;
+float3 end;
+float3 focus;
+[numthreads(1, 1, 1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    // Get the start and end positions from the global buffers
+    
+
+    // Calculate the direction and distance
+    float3 direction = end - start;
+    float distance = length(direction);
+    direction /= distance;
+
+    // Calculate the parabola points
+    for (int i = 0; i < 100; i++) // Adjust the number of points as needed
+    {
+        float t = i / 99.0f;
+        float3 position = start + direction * t * distance;
+        float x = position.x - focus.x;
+        float y = (1.0f / (2.0f * (focus.y - position.y))) * x * x + (focus.y + position.y) / 2.0f;
+        position.y += y;
+
+        // Write the point to the texture
+        Result[id] = float4(position, 1.0f);
+    }
+}

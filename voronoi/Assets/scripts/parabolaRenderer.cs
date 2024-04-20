@@ -99,8 +99,8 @@ public class parabolaRenderer : MonoBehaviour
             Vector3 point = CalculateParabola(t);
             //points.Add(point);
 
-            if (IsVisible(point))
-            {
+            //if (IsVisible(point))
+            //{
                 if(point.x < min)
                 {
                     min = (int)point.x;
@@ -126,7 +126,7 @@ public class parabolaRenderer : MonoBehaviour
                 }
 
 
-            }
+           // }
         }
     }
 
@@ -138,7 +138,7 @@ public class parabolaRenderer : MonoBehaviour
         Vector3 position = start + direction * t * distance;
         float x = position.x - focusObj.transform.position.x;
         float y = (1 / (2 * (float)(focusObj.transform.position.y - eventLine.transform.position.y)))
-            * Mathf.Pow(x, 2)
+            * (Mathf.Pow(x, 2))
             + ((focusObj.transform.position.y + eventLine.transform.position.y) / (float)2);
         position.y = y;
         return position;

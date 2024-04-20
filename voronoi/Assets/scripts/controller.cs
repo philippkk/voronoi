@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using System.Reflection;
 
 public class controller : MonoBehaviour
 {
@@ -16,13 +17,19 @@ public class controller : MonoBehaviour
     public List<Site> sites = new List<Site>(0);
     public fortune f = new fortune();
     public GameObject eventLine;
+    private Vector3 eventLinePos;
+    public List<GameObject> drawnObjects = new List<GameObject>();
     //public List<GameObject> pointObjects = new List<GameObject>();
     //public DCEL dcel;
     // Start is called before the first frame update
 
+    public GameObject edge,breakPoint;
+    public List<GameObject> drawable = new List<GameObject>();
     LineRenderer lineRenderer;
     void Start()
     {
+        drawable.Add(edge);
+        drawable.Add(breakPoint);
         lineRenderer = GetComponent<LineRenderer>();
         eventLine = GameObject.Find("eventline");
         foreach(GameObject pos in pointLocations)
@@ -32,18 +39,17 @@ public class controller : MonoBehaviour
             
         }
        
-        f.CalcVoronoi(sites,eventLine.transform.position.y);
 
 
-        #region
+
         //lineRenderer.positionCount = 4;
-        //Vector3 point_B = new Vector2(-12.70f,-11.85f) + new Vector2(-0.89f,-0.46f) * 500;
-        //lineRenderer.SetPosition(0, new Vector2(-6.90f, -8.83f));
+        //Vector3 point_B = new Vector2(-12.70f, -11.85f) + new Vector2(-0.89f, -0.46f) * 500;
+        //lineRenderer.SetPosition(0, new Vector2(-7.43f, -9.11f));
         //lineRenderer.SetPosition(1, point_B);
         //Vector3 point_B2 = new Vector2(-12.70f, -11.85f) + new Vector2(0.89f, 0.46f) * 500;
         //lineRenderer.SetPosition(2, new Vector2(-6.90f, -8.83f));
         //lineRenderer.SetPosition(3, point_B2);
-        //#region old
+        #region old
         ////cam = GameObject.Find("Main Camera");
         ////dcel = new DCEL();
         ////Vertex v1 = dcel.createVertex(0, 0, null, 2);
@@ -122,7 +128,7 @@ public class controller : MonoBehaviour
         ////}
 
         ////  line.setUpLine(points);
-       #endregion
+        #endregion
 
     }
 
@@ -230,8 +236,21 @@ public class controller : MonoBehaviour
     //}
     #endregion
     // Update is called once per frame
-    void Update()
+    void FixedUpdate()
     {
+        if (eventLinePos != eventLine.transform.position)
+        {
+            foreach(GameObject g in drawnObjects)
+            {
+                Destroy(g);
+             
+            }
+            ClearLog();
+            drawnObjects.Clear();
+            eventLinePos = eventLine.transform.position;
+            f = new fortune();
+            f.CalcVoronoi(sites,eventLine.transform.position.y,drawable,drawnObjects);
+        }
         if (Input.GetKeyDown(KeyCode.R))
         {
             string currentSceneName = SceneManager.GetActiveScene().name;
@@ -241,13 +260,16 @@ public class controller : MonoBehaviour
 
     }
 
-    private void FixedUpdate()
-    {
-       //jarvisMarch();
-       //line.setUpLine(points);
 
+    public void ClearLog()
+    {
+        var assembly = Assembly.GetAssembly(typeof(UnityEditor.Editor));
+        var type = assembly.GetType("UnityEditor.LogEntries");
+        var method = type.GetMethod("Clear");
+        method.Invoke(new object(), null);
     }
 
-    
+
+
 
 }

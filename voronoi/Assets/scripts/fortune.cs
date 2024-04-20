@@ -8,9 +8,11 @@ public class fortune
     public SplayTree beachLine = new SplayTree();
     SplayTree eventQueue = new SplayTree();
     private List<Node> eventSites = new List<Node>();
+    List<GameObject> drawable = new List<GameObject>();
 
-    public void CalcVoronoi(List<Site> sites,float directX)
+    public void CalcVoronoi(List<Site> sites,float directX,List<GameObject> drawable,List<GameObject> drawnOjects)
     {
+        this.drawable = drawable;
         //SORT SIZES > y max
         sites.Sort((site1, site2) => site2.point.y.CompareTo(site1.point.y));
         foreach (Site s in sites)
@@ -34,11 +36,16 @@ public class fortune
             }
             s = n.site;
 
-            Debug.Log("Site pos: "+s.point.ToString());
+            Debug.Log("Site pos: "+s.point.ToString() + "type:" + s.type);
 
+
+            if(directX >= s.point.y && s.type != 1)
+            {
+                break;
+            }
             if(s.type == 0) //if site event
             {
-                if(beachLine.root == null) //new site into beach
+                if (beachLine.root == null) //new site into beach
                 {
                     Node newSite = new Node(s.point.x);
                     newSite.site = s;
@@ -50,54 +57,73 @@ public class fortune
                     //beachLine.inorder(beachLine.root);
                     //find arc directly above event
                     Node arcAbove = beachLine.searchNear(beachLine.root, s.point.x,false);
-                    Debug.Log("ARC ABOVE: " + arcAbove.site.point.ToString());
+                   // Debug.Log("ARC ABOVE: " + arcAbove.site.point.ToString());
                     //create new arc
                     Node newSite = new Node(s.point.x);
                     newSite.site = s;
                     beachLine.insert(newSite);
                     //SPLIT ARC INTO TWO
                     //calc break points;
-                    Vector2 breakLeft = calcBreakPoint(s.point, arcAbove.site.point, s.point.y-0.5f).Item1;
-                    Vector2 breakRight = calcBreakPoint(s.point, arcAbove.site.point, s.point.y-0.5f).Item2;
+                    Vector2 breakLeft = calcBreakPoint(s.point, arcAbove.site.point, directX).Item1;
+                    Vector2 breakRight = calcBreakPoint(s.point, arcAbove.site.point, directX).Item2;
                     Node bpLeft = new Node(breakLeft.x);
                     bpLeft.site = arcAbove.site;
                     bpLeft.site2 = s;
+                    bpLeft.startingDir = breakLeft;
                     Node bpRight = new Node(breakRight.x);
                     bpRight.site = s;
                     bpRight.site2 = arcAbove.site;
+                    bpRight.startingDir = breakRight;
                     beachLine.insert(bpLeft);
                     beachLine.insert(bpRight);
                     //CALC EDGES
                     Node edgeL = new Node(newSite.site.point.x - 0.5f);
                     Node edgeR = new Node(newSite.site.point.x + 0.5f);
                     edgeL.site = edgeR.site = s;
+                    edgeL.lineEnd = breakLeft;
+                    edgeR.lineEnd = breakRight;
                     //direction of edge
                     float midX = (1.0f / 2.0f) * (newSite.site.point.x + arcAbove.site.point.x);
                     float midY = (1.0f / 2.0f) * (newSite.site.point.y + arcAbove.site.point.y);
                     float slope = -(1 / ((newSite.site.point.y - arcAbove.site.point.y) / (newSite.site.point.x - arcAbove.site.point.x)));
-                    edgeL.direction = -(new Vector2(midX, calcYline(slope, midX, midX, midY))
-                        - new Vector2(midX - 0.5f, calcYline(slope, midX -0.5f, midX, midY))).normalized;
+                    edgeL.direction = (new Vector2(s.point.x - 0.1f, calcYline(slope, s.point.x - 0.1f, midX, midY))
+                        - new Vector2(s.point.x - 0.0f, calcYline(slope, s.point.x -0.0f, midX, midY))).normalized;
                     edgeL.isEdge = true;
-                    edgeL.startingDir = new Vector2(bpLeft.key, calcYline(slope, bpLeft.key, midX, midY));
-                    edgeR.direction = -(new Vector2(midX, calcYline(slope, midX, midX, midY))
-                        - new Vector2(midX + 0.5f, calcYline(slope, midX + 0.5f, midX, midY))).normalized;
+                    edgeL.startingDir = new Vector2(s.point.x-0.1f, calcYline(slope, s.point.x - 0.1f, midX, midY));
+                    edgeR.direction = (new Vector2(s.point.x + 0.1f, calcYline(slope, s.point.x + 0.1f, midX, midY))
+                        - new Vector2(s.point.x + 0.0f, calcYline(slope, s.point.x + 0.0f, midX, midY))).normalized;
                     edgeR.isEdge = true;
-                    edgeR.startingDir = new Vector2(bpRight.key, calcYline(slope, bpRight.key, midX, midY));
+                    edgeR.startingDir = new Vector2(s.point.x + 0.1f, calcYline(slope, s.point.x + 0.1f, midX, midY));
                     edgeL.midX = edgeR.midX = midX;
                     edgeL.midY = edgeR.midY = midY;
                     edgeL.slope = edgeR.slope = slope;
+
+                    GameObject eObj = GameObject.Instantiate(drawable[0], s.point, Quaternion.identity);
+                    drawnOjects.Add(eObj);
+                    edgeController e = eObj.GetComponent<edgeController>();
+                    e.start = edgeL.startingDir;
+                    e.end = breakLeft;
+
+
+                    eObj = GameObject.Instantiate(drawable[0], s.point, Quaternion.identity);
+                    drawnOjects.Add(eObj);
+                    e = eObj.GetComponent<edgeController>();
+                    e.start = edgeR.startingDir;
+                    e.end = breakRight;
+
                     beachLine.insert(edgeL);
                     beachLine.insert(edgeR);
                     beachLine.delete(arcAbove);
 
                     //check for circle event
-                    checkCircleEvent();
+                    checkCircleEvent(drawnOjects,directX);
 
                 }
             }
-            else//is circle event
+            else if(s.type == 1)//is circle event
             {
-
+                Debug.Log("CIRCLE MOTHER FUCKER");
+                handleCircleEvent(drawnOjects, directX);
             }
 
 
@@ -107,11 +133,15 @@ public class fortune
 
         }
         List<Node> nodes = new List<Node>();
-        beachLine.inorder(beachLine.root,nodes,true);
+       // beachLine.inorder(beachLine.root,nodes,true);
     }
 
+    void handleCircleEvent(List<GameObject> drawnOjects, float directX)
+    {
 
-    void checkCircleEvent()
+    }
+
+    void checkCircleEvent(List<GameObject> drawnOjects,float directX)
     {// for every arc, find edge to the left and right of it, and see if the directions make em intersect
      //traverse the beachline starting from lowest x,
      //general method, check left,right,then parent till
@@ -148,18 +178,24 @@ public class fortune
                     }
                     startIndex++;
                 }
-                //testing to see if found correctly and it seems good
-                if(leftEdge != null && rightEdge != null)
+                if(leftEdge != null && rightEdge != null && leftEdge.site.point != rightEdge.site.point)
                 {
-                    if(n.site2 != null)
+                    //Debug.Log("edge " + leftEdge.direction + " " + leftEdge.startingDir + " " + leftEdge.site.point);
+                    //Debug.Log("edge " + rightEdge.direction + " " + rightEdge.startingDir + " " + rightEdge.site.point);
+                    Vector2? intersection =  CheckForIntersection(leftEdge.startingDir, leftEdge.lineEnd, rightEdge.startingDir, rightEdge.lineEnd,drawnOjects);
+                    if (intersection.HasValue)
                     {
-                        //Debug.Log("breakpoint arc below");
+                        float directXInter = intersection.Value.y - Vector2.Distance(n.site.point, intersection.Value);
+                       // Debug.Log("DIRECT X INTERSECTION Y VALUIE: " + directXInter);
+
+                        //ADDING CIRCLE EVENT
+                        Node circleNode = new Node(directXInter);
+                        Site circleSite = new Site(new Vector2(intersection.Value.x, directXInter), 1);
+                        circleNode.site = circleSite;
+                        eventQueue.insert(circleNode);
                     }
-                   // Debug.Log("left " + leftEdge.startingDir + " focus " + n.site.point + " right " + rightEdge.startingDir);
-
+                   
                 }
-
-                //now to do the actual intersection test
             }
 
         }
@@ -189,10 +225,58 @@ public class fortune
             ((x1 + (y1 - yd) * Mathf.Sqrt(under)) * (y2 - yd))) / (y1 - y2);
         result.x = resX;
         result2.x = resX2;
+
+        float y = (1 / (2 * (y1 - directX)))
+            * Mathf.Pow(resX-x1, 2)
+            + ((y1 + directX) / (float)2);
+        float y3 = (1 / (2 * (y1 - directX)))
+            * Mathf.Pow(resX2 - x1, 2)
+            + ((y1 + directX) / (float)2);
+        result.y = y;
+        result2.y = y3;
+
         return (result, result2);
     }
     public float calcYline(float m, float x, float Xx, float Yy)
     {
         return m * (x - Xx) + Yy;
     }
+    public static Vector2? Intersect(float m1, float b1, float m2, float b2)
+    {
+        if (m1 == m2)
+        {
+            return null;
+        }
+
+        float x = (b2 - b1) / (m1 - m2);
+        float y = m1 * x + b1;
+
+        return new Vector2(x, y);
+    }
+
+    Vector2? CheckForIntersection(Vector2 line1Start, Vector2 line1End,Vector2 line2Start,Vector2 line2End, List<GameObject> drawnOjects)
+    {
+        float m1 = (line1End.y - line1Start.y) / (line1End.x - line1Start.x);
+        float b1 = line1Start.y - m1 * line1Start.x;
+
+        float m2 = (line2End.y - line2Start.y) / (line2End.x - line2Start.x);
+        float b2 = line2Start.y - m2 * line2Start.x;
+
+        if (m1 == m2)
+        {
+            Debug.Log("Lines are parallel, no intersection.");
+            return null;
+        }
+        else
+        {
+            float x = (b2 - b1) / (m1 - m2);
+            float y = m1 * x + b1;
+            Debug.Log("Intersection at (" + x + ", " + y + ")");
+            GameObject inter = GameObject.Instantiate(drawable[1], new Vector3(x, y, 0), Quaternion.identity);
+            drawnOjects.Add(inter);
+            return new Vector2(x, y);
+            
+        }
+    }
 }
+

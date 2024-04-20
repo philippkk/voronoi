@@ -333,6 +333,11 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 81171820}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &145978218 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5648833056796177203, guid: 1413a79f307ff48439906bdc6c125102, type: 3}
+  m_PrefabInstance: {fileID: 668976463}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &221467338
 GameObject:
   m_ObjectHideFlags: 0
@@ -1183,7 +1188,7 @@ Transform:
   m_GameObject: {fileID: 616462043}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -5, y: -50.9, z: 0.3566346}
+  m_LocalPosition: {x: -5, y: -30.6, z: 0.3566346}
   m_LocalScale: {x: 900, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2411,8 +2416,10 @@ MonoBehaviour:
   pointLocations:
   - {fileID: 1358845590}
   - {fileID: 740021313}
-  - {fileID: 1663367786}
+  - {fileID: 145978218}
   eventLine: {fileID: 0}
+  drawnObjects: []
+  edge: {fileID: 2893260929392603840, guid: df0e1f68a3c8c4c1baba7f0f617e0d35, type: 3}
 --- !u!120 &1250325099
 LineRenderer:
   serializedVersion: 2
@@ -3109,11 +3116,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1648196138}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!1 &1663367786 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 5648833056796177203, guid: 1413a79f307ff48439906bdc6c125102, type: 3}
-  m_PrefabInstance: {fileID: 668976463}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1668882135
 GameObject:
   m_ObjectHideFlags: 0

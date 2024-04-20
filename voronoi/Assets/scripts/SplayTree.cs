@@ -12,7 +12,7 @@ public class Node
     public bool isEdge = false;
     public float midX, midY,slope;
     public Vector2 direction = Vector2.positiveInfinity;
-    public Vector2 startingDir;
+    public Vector2 startingDir,lineEnd;
     public Site site;
     public Site site2;
     public HalfEdge leftEdge;
@@ -292,13 +292,13 @@ public class SplayTree
             if (print) {
                 if (n.isEdge)
                 {
-                    Debug.Log("edge " + n.direction + " " + n.startingDir);
+                    Debug.Log("edge " + n.direction + " " + n.startingDir+ " "+n.site.point);
 
                 }
                 else if (n.site2 != null)
                 {
                     Debug.Log("break point: " + n.site.point.ToString() + " AND " + n.site2.point.ToString()
-                        + " " + n.key);
+                        + " " + n.key + " " + n.startingDir);
                 }
                 else if (n.site != null)
                 {

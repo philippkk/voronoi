@@ -97,7 +97,6 @@ public class parabolaRenderer : MonoBehaviour
         {
             float t = i / (float)numPoints;
             Vector3 point = CalculateParabola(t);
-            //points.Add(point);
 
             //if (IsVisible(point))
             //{

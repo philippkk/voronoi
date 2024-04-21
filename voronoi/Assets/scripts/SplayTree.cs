@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -14,7 +15,7 @@ public class Node
     public bool isEdge = false;
     public float midX, midY,slope;
     public Vector2 direction = Vector2.positiveInfinity;
-    public Vector2 startingDir,lineEnd;
+    public Vector2 startingDir,lineEnd,intersection;
     public Site site;
     public Site site2;
 
@@ -153,6 +154,7 @@ public class SplayTree
                 temp = temp.right;
             }
         }
+
         n.parent = y;
 
         if (y == null)
@@ -161,21 +163,19 @@ public class SplayTree
         }else if (n.key < y.key)
         {
             y.left = n;
+            n.parent = y;
+            
         }
         else
         {
             y.right = n;
+            n.parent = y; 
         }
         this.splay(n);
     }
     public Node search(Node n, float x)
     {
-        if (n == null)
-        {
-            Debug.Log("NULL IN SEARCH??");
-            return null;
-        }
-        if (Mathf.Approximately(x,n.key))
+        if (x == n.key)
         {
             this.splay(n);
             return n;
@@ -260,25 +260,30 @@ public class SplayTree
     public void delete(Node n)
     {
         this.splay(n);
+        Debug.Log("in delete:" + this.root.key);
         SplayTree leftSubtree = new SplayTree();
         leftSubtree.root = this.root.left;
-        if(leftSubtree.root != null)
+        if (leftSubtree.root != null)
         {
             leftSubtree.root.parent = null;
         }
 
         SplayTree rightSubtree = new SplayTree();
         rightSubtree.root = this.root.right;
-        if(rightSubtree.root != null)
+        if (rightSubtree.root != null)
         {
             rightSubtree.root.parent = null;
         }
 
-        if(leftSubtree.root != null)
+        if (leftSubtree.root != null)
         {
             Node m = leftSubtree.max(leftSubtree.root);
             leftSubtree.splay(m);
             leftSubtree.root.right = rightSubtree.root;
+            if (rightSubtree.root != null)
+            {
+                rightSubtree.root.parent = leftSubtree.root;  // Update the parent of rightSubtree.root
+            }
             this.root = leftSubtree.root;
         }
         else
@@ -286,6 +291,7 @@ public class SplayTree
             this.root = rightSubtree.root;
         }
     }
+
     public List<Node> inorder(Node n,List<Node> visitedNodes,bool print)
     {
         if (n != null)
@@ -294,17 +300,29 @@ public class SplayTree
             if (print) {
                 if (n.isEdge)
                 {
-                    Debug.Log("edge " + n.direction + " " + n.startingDir+ " "+n.site.point);
+                    if(n.parent == null && n != root)
+                    {
+                        Debug.Log("NO PARENT FOR BELOW");
+                    }
+                    Debug.Log("edge " + n.direction + " " + n.startingDir+ " "+n.site.point+" "+n.key);
 
                 }
                 else if (n.site2 != null)
                 {
+                    if (n.parent == null && n != root)
+                    {
+                        Debug.Log("NO PARENT FOR BELOW");
+                    }
                     Debug.Log("break point: " + n.site.point.ToString() + " AND " + n.site2.point.ToString()
                         + " " + n.key + " " + n.startingDir);
                 }
                 else if (n.site != null)
                 {
-                    Debug.Log("arc: " + n.site.point.ToString());
+                    if (n.parent == null && n != root)
+                    {
+                        Debug.Log("NO PARENT FOR BELOW");
+                    }
+                    Debug.Log("arc: " + n.site.point.ToString() + " "+n.key);
                 }
             }
             visitedNodes.Add(n);
@@ -314,3 +332,5 @@ public class SplayTree
         return visitedNodes;
     }
 }
+
+

@@ -6,6 +6,7 @@ public class edgeController : MonoBehaviour
 {
 
     public Vector2 start, end;
+    public float lineKey;
     LineRenderer lr;
     // Start is called before the first frame update
     void Start()

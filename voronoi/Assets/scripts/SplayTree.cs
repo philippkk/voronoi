@@ -8,6 +8,8 @@ public class Node
     public Node right;
     public Node parent;
 
+
+    public bool isLeft = false;
     public float key;
     public bool isEdge = false;
     public float midX, midY,slope;
@@ -15,24 +17,24 @@ public class Node
     public Vector2 startingDir,lineEnd;
     public Site site;
     public Site site2;
-    public HalfEdge leftEdge;
-    public HalfEdge rightEdge;
 
+    //for circleEvent
+    public Node leftEdge;
+    public Node rightEdge;
+    public Node nodeToRemove;
+    
     public Node prev;
     public Node next;
 
-    public Node(Site s, HalfEdge l, HalfEdge r)
+    public Node(Site s)
     {
         site = s;
-        leftEdge = l;
-        rightEdge = r;
         left = right = parent = prev = next = null;
     }
     public Node(float k)
     {
         key = k;
         site = site2 =null;
-        leftEdge = rightEdge = null;
         left = right = parent = prev = next = null;
     }
 
@@ -305,9 +307,8 @@ public class SplayTree
                     Debug.Log("arc: " + n.site.point.ToString());
                 }
             }
-
-            inorder(n.right,visitedNodes,print);
             visitedNodes.Add(n);
+            inorder(n.right,visitedNodes,print);
             return visitedNodes;
         }
         return visitedNodes;

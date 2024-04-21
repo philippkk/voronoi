@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using static Unity.VisualScripting.FlowStateWidget;
 
 public class fortune
 {
@@ -64,11 +63,15 @@ public class fortune
                     beachLine.insert(newSite);
                     //SPLIT ARC INTO TWO
                     //calc break points;
-                    Vector2 breakLeft = calcBreakPoint(s.point, arcAbove.site.point, directX).Item1;
-                    Vector2 breakRight = calcBreakPoint(s.point, arcAbove.site.point, directX).Item2;
+                    Vector2 breakLeft = calcBreakPoint(s.point, arcAbove.site.point, s.point.y - 0.1f).Item1;
+                    Vector2 breakRight = calcBreakPoint(s.point, arcAbove.site.point, s.point.y - 0.1f).Item2;
+                    /*
+                     * ADD SOMETHING tO KEEP TRACK OF ORIGINAL AND DISPLAYED
+                     */
                     Node bpLeft = new Node(breakLeft.x);
                     bpLeft.site = arcAbove.site;
                     bpLeft.site2 = s;
+                    bpLeft.isLeft = true;
                     bpLeft.startingDir = breakLeft;
                     Node bpRight = new Node(breakRight.x);
                     bpRight.site = s;
@@ -80,8 +83,7 @@ public class fortune
                     Node edgeL = new Node(newSite.site.point.x - 0.5f);
                     Node edgeR = new Node(newSite.site.point.x + 0.5f);
                     edgeL.site = edgeR.site = s;
-                    edgeL.lineEnd = breakLeft;
-                    edgeR.lineEnd = breakRight;
+                    
                     //direction of edge
                     float midX = (1.0f / 2.0f) * (newSite.site.point.x + arcAbove.site.point.x);
                     float midY = (1.0f / 2.0f) * (newSite.site.point.y + arcAbove.site.point.y);
@@ -98,9 +100,16 @@ public class fortune
                     edgeL.midY = edgeR.midY = midY;
                     edgeL.slope = edgeR.slope = slope;
 
+
+                    //get pos of breaks based off of the actual directX line
+                    breakLeft = calcBreakPoint(s.point, arcAbove.site.point, directX).Item1;
+                    breakRight = calcBreakPoint(s.point, arcAbove.site.point, directX).Item2;
+                    edgeL.lineEnd = breakLeft;
+                    edgeR.lineEnd = breakRight;
                     GameObject eObj = GameObject.Instantiate(drawable[0], s.point, Quaternion.identity);
                     drawnOjects.Add(eObj);
                     edgeController e = eObj.GetComponent<edgeController>();
+                    e.lineKey = edgeL.key;
                     e.start = edgeL.startingDir;
                     e.end = breakLeft;
 
@@ -109,6 +118,7 @@ public class fortune
                     drawnOjects.Add(eObj);
                     e = eObj.GetComponent<edgeController>();
                     e.start = edgeR.startingDir;
+                    e.lineKey = edgeR.key;
                     e.end = breakRight;
 
                     beachLine.insert(edgeL);
@@ -122,8 +132,12 @@ public class fortune
             }
             else if(s.type == 1)//is circle event
             {
-                Debug.Log("CIRCLE MOTHER FUCKER");
-                handleCircleEvent(drawnOjects, directX);
+                Debug.Log("CIRCLE MOTHER FUCKER" +directX+" "+ n.key);
+                handleCircleEvent(n,drawnOjects,directX);
+                if (directX <= n.key)
+                {
+                    Debug.Log("ON cIRCLE EVENT");
+                }
             }
 
 
@@ -132,13 +146,19 @@ public class fortune
 
 
         }
-        List<Node> nodes = new List<Node>();
-       // beachLine.inorder(beachLine.root,nodes,true);
+        List<Node> visted = new List<Node>();
+        beachLine.inorder(beachLine.root,visted,true);
     }
-
-    void handleCircleEvent(List<GameObject> drawnOjects, float directX)
+    /*
+     * 
+     * WHEN PRINTING BREAKPOINT MADE ARC MAKE SURE TO CHECK IS LEFT
+     * IF IT IS THE RIGHT ARC THEN BASE FOCUS OFF SITE2
+     */
+    void handleCircleEvent(Node n,List<GameObject> drawnOjects, float directX)
     {
-
+        //need to remove n,leftedge,rightedge,and nodetoremove
+        //make rightedge and leftedge gameobject have set end before removing from beachline
+        //
     }
 
     void checkCircleEvent(List<GameObject> drawnOjects,float directX)
@@ -146,19 +166,19 @@ public class fortune
      //traverse the beachline starting from lowest x,
      //general method, check left,right,then parent till
         List<Node> nodes = new List<Node>();
-        beachLine.inorder(beachLine.root, nodes,false);
-        foreach(Node n in nodes)
+        beachLine.inorder(beachLine.root,nodes,false);
+        foreach (Node n in nodes)
         {
             if ((n.site != null || n.site2 != null)&&!n.isEdge)
             {
+
                 //found an arc/breakpoint to check now find the edge to its left and right
                 //after that see if those two edges collide as they both have the slope and shit then need
-                //if the slopes are equal the are parallel, (or the same line), and wont intersect
-
+                //if the slopes are equal the are parallel, (or the same line), and wont intersect         
                 //finding the two edges
                 Node leftEdge = null;
                 Node rightEdge = null;
-                int startIndex = nodes.IndexOf(n) - 1;
+                int startIndex = nodes.IndexOf(n);
                 while(startIndex > -1)
                 {
                     if (nodes[startIndex].isEdge)
@@ -178,19 +198,25 @@ public class fortune
                     }
                     startIndex++;
                 }
-                if(leftEdge != null && rightEdge != null && leftEdge.site.point != rightEdge.site.point)
+              //  Debug.Log("possible " + n.site.point + " " + leftEdge.site.point + " " + rightEdge.site.point);
+                if (leftEdge != null && rightEdge != null && leftEdge.site.point != rightEdge.site.point)
                 {
-                    //Debug.Log("edge " + leftEdge.direction + " " + leftEdge.startingDir + " " + leftEdge.site.point);
-                    //Debug.Log("edge " + rightEdge.direction + " " + rightEdge.startingDir + " " + rightEdge.site.point);
+                   
                     Vector2? intersection =  CheckForIntersection(leftEdge.startingDir, leftEdge.lineEnd, rightEdge.startingDir, rightEdge.lineEnd,drawnOjects);
                     if (intersection.HasValue)
                     {
+                        //Debug.Log("edge " + leftEdge.direction + " " + leftEdge.startingDir + " " + leftEdge.site.point);
+                        //Debug.Log(n.site2.point);
+                        //Debug.Log("edge " + rightEdge.direction + " " + rightEdge.startingDir + " " + rightEdge.site.point);
                         float directXInter = intersection.Value.y - Vector2.Distance(n.site.point, intersection.Value);
                        // Debug.Log("DIRECT X INTERSECTION Y VALUIE: " + directXInter);
 
                         //ADDING CIRCLE EVENT
                         Node circleNode = new Node(directXInter);
                         Site circleSite = new Site(new Vector2(intersection.Value.x, directXInter), 1);
+                        circleNode.leftEdge = leftEdge;
+                        circleNode.rightEdge = rightEdge;
+                        circleNode.nodeToRemove = n;
                         circleNode.site = circleSite;
                         eventQueue.insert(circleNode);
                     }
@@ -199,6 +225,7 @@ public class fortune
             }
 
         }
+
     }
 
 

@@ -47,6 +47,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   start: {x: 0, y: 0}
   end: {x: 0, y: 0}
+  lineKey: 0
 --- !u!120 &7842001548753474803
 LineRenderer:
   serializedVersion: 2

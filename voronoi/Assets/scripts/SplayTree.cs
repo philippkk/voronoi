@@ -13,11 +13,15 @@ public class Node
     public bool isLeft = false;
     public float key;
     public bool isEdge = false;
+    public bool finishedEdge = false;
     public float midX, midY,slope;
     public Vector2 direction = Vector2.positiveInfinity;
     public Vector2 startingDir,lineEnd,intersection;
     public Site site;
     public Site site2;
+    public GameObject edgeObject;
+
+    public Node leftbp, rightbp;
 
     //for circleEvent
     public Node leftEdge;
@@ -175,6 +179,10 @@ public class SplayTree
     }
     public Node search(Node n, float x)
     {
+        if(n == null)
+        {
+            return null;
+        }
         if (x == n.key)
         {
             this.splay(n);
@@ -260,7 +268,7 @@ public class SplayTree
     public void delete(Node n)
     {
         this.splay(n);
-        Debug.Log("in delete:" + this.root.key);
+        //Debug.Log("in delete:" + this.root.key);
         SplayTree leftSubtree = new SplayTree();
         leftSubtree.root = this.root.left;
         if (leftSubtree.root != null)

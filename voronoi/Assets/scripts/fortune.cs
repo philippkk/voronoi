@@ -3,8 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 using UnityEngine.UIElements;
-using static UnityEditor.Progress;
-using System.Linq;
+    using System.Linq;
 
 public class fortune
 {
@@ -114,6 +113,13 @@ public class fortune
      *         
      *         
      *         todo: FOR TRIANGLE ADD FACE TO SITE AND MAKE SITE LIST
+     *         
+     *         
+     *         todo: hard code degens, if all points are colinear vert and horizontal
+     *              hard code double circle too
+     *                  circle current get angry with the infinite slope
+     *                  one more dcel issue too, sometimes there are extra points on boundary,
+     *                      should just draw the dcel too to make sure it looks right :s
      * fixed
      * DELETING CAUSES A FUCKING NODE TO LOsE ITS PARNET AND THATS WhAT FUCKS EVERYTHIN UP
      */
@@ -124,6 +130,11 @@ public class fortune
     SplayTree eventQueue = new SplayTree();
     List<GameObject> drawable = new List<GameObject>();
     public DCEL dcel = new DCEL();
+    public DCEL delaunayDcel = new DCEL();
+
+
+    public List<Site> delauneySites = new List<Site>();
+
 
     public float highx = -9999;
     public float lowx = 9999;
@@ -179,7 +190,7 @@ public class fortune
                 n = n.right;
             }
             s = n.site;
-            //Debug.Log("Site pos: " + s.point.ToString() + "type:" + s.type);
+            ////Debug.Log("Site pos: " + s.point.ToString() + "type:" + s.type);
 
             if (directX >= s.point.y)
             {
@@ -198,33 +209,12 @@ public class fortune
                     dcel.faces.Add(f);
                     s.face = f;
 
+                    delauneySites.Add(s);
+
                     if (s.point.x < lowx) { lowx = s.point.x; };
                     if (s.point.x > highx) { highx = s.point.x; };
                     if (s.point.y < lowy) { lowy = s.point.y; };
                     if (s.point.y > highy) { highy = s.point.y; };
-
-                    #region arcobject
-                    //bool found = false;
-                    //foreach(GameObject g in drawnOjects) {
-                    //    if(g.GetComponent<arcController>() != null)
-                    //    {
-                    //        if(Mathf.Approximately(g.GetComponent<arcController>().key, s.point.x))
-                    //        {
-                    //            found = true;
-                    //        }
-                    //    }
-                    //}
-                    //if (!found)
-                    //{
-                    //    GameObject arc = GameObject.Instantiate(drawable[3], new Vector3(s.point.x, s.point.y, 0), Quaternion.identity);
-                    //    arcController ac = arc.GetComponent<arcController>();
-                    //    ac.focus = s.point;
-                    //    ac.start = new Vector3(-50, 0, 0);
-                    //    ac.end = new Vector3(50, 0, 0);
-                    //    ac.key = s.point.x;
-                    //    drawnOjects.Add(arc);
-                    //}
-                    #endregion
 
                 }
                 else //not empty handle site event
@@ -237,7 +227,7 @@ public class fortune
 
                     if (beachLine.root == null)
                     {
-                        //Debug.LogError("root is null");
+                        ////Debug.LogError("root is null");
                     }
                     //find arc directly above event
 
@@ -251,7 +241,7 @@ public class fortune
                         uhoh++;
                         if(uhoh > 1000)
                         {
-                            //Debug.LogError("hit uhoh in arc above search");
+                            ////Debug.LogError("hit uhoh in arc above search");
                             break;
                         }
                         Vector2 breakpoint,bp1,bp2;
@@ -283,12 +273,12 @@ public class fortune
                         }
                         if (s.point.x < breakpoint.x)
                         {
-                            //Debug.Log("left from " + breakpoint);
+                            ////Debug.Log("left from " + breakpoint);
                             arcAbove = arcAbove.left;
                         }
                         else
                         {
-                            //Debug.Log("right from " + breakpoint);
+                            ////Debug.Log("right from " + breakpoint);
                             arcAbove = arcAbove.right;
                         }
                         
@@ -300,13 +290,13 @@ public class fortune
                         {
                             if (arcAbove.isLeft)
                             {
-                                //Debug.Log("landed on a left breakpoint1");
+                                ////Debug.Log("landed on a left breakpoint1");
 
                                 siteAbove = arcAbove.site;
                             }
                             else
                             {
-                                //Debug.Log("landed on a right breakpoint1");
+                                ////Debug.Log("landed on a right breakpoint1");
 
                                 siteAbove = arcAbove.site;
                             }
@@ -315,13 +305,13 @@ public class fortune
                         {
                             if (arcAbove.isLeft)
                             {
-                                //Debug.Log("landed on a left breakpoint2");
+                                ////Debug.Log("landed on a left breakpoint2");
 
                                 siteAbove = arcAbove.site;
                             }
                             else
                             {
-                                //Debug.Log("landed on a right breakpoint2");
+                                ////Debug.Log("landed on a right breakpoint2");
 
                                 siteAbove = arcAbove.site2;
                             }
@@ -333,12 +323,15 @@ public class fortune
                         siteAbove = arcAbove.site;
                     } //breakpoint
 
-                    //Debug.Log("ARC ABOVE: " + siteAbove.point.ToString());
-                    
-                    //create new arc
-                    Node newSite = new Node(s.point.x);
+                    ////Debug.Log("ARC ABOVE: " + siteAbove.point.ToString());
+
+
+                    Node newSite;
+                    //create new arx
+                    newSite = new Node(s.point.x);
                     newSite.site = s;
 
+                    delauneySites.Add(s);
                     //SPLIT ARC INTO TWO
                     //calc break points;
                     Vector2 breakLeft = calcBreakPoint(s.point, siteAbove.point, s.point.y - 0.005f).Item1;
@@ -441,13 +434,6 @@ public class fortune
                     edgeR.right = bpRight;
                     bpRight.parent = edgeR;
 
-                    //arcAbove.site.point = new Vector2(69, 420);
-                    //todo: uncomment splay because itll balance tree better
-                    //dont it break its
-                    //beachLine.splay(edgeL);
-
-
-
                     /*
                      * DCEL STUFF
                      * method:
@@ -461,6 +447,7 @@ public class fortune
                     Face f;
                     f = new Face();
                     f.site = s;
+                    s.face = f;
                     dcel.faces.Add(f);
 
                     HalfEdge edge = new HalfEdge();
@@ -484,7 +471,7 @@ public class fortune
                             float testDistance = Vector2.Distance(p.intersection, s.point) - 0.005f;
                             if (testDistance < distance)
                             {
-                                //Debug.LogWarning("invalid event");
+                                ////Debug.LogWarning("invalid event");
                                 p.valid = false;
                                 foreach (GameObject g in drawnOjects)
                                 {
@@ -517,7 +504,7 @@ public class fortune
                 {
                     handleCircleEvent(n, drawnOjects, directX);
 
-                    //Debug.Log("ON cIRCLE EVENT");
+                    ////Debug.Log("ON cIRCLE EVENT");
                 }
             }
 
@@ -526,6 +513,9 @@ public class fortune
 
 
         }
+
+
+
         visted = new List<Node>();
         beachLine.inorder(beachLine.root, visted, true);
         TMP_Text text = GameObject.Find("tree").GetComponent<TMP_Text>();
@@ -539,7 +529,7 @@ public class fortune
          *  need highest point, leftmost point, rightmost and lowest,
          *  just create box that is like 10 bigger or something
          */
-        Debug.Log("lowx " + lowx + " high x " + highx + " lowy " + lowy + " highy " + highy);
+        //Debug.Log("lowx " + lowx + " high x " + highx + " lowy " + lowy + " highy " + highy);
         //box vertex
         int buffer = 15;
         Vertex b1 = new Vertex();
@@ -552,70 +542,8 @@ public class fortune
         b4.point = new Vector2(lowx - buffer, lowy - buffer);
 
         b1.type = b2.type = b3.type = b4.type = 1;
-
-        ////box edgex between them
-        //HalfEdge e1 = new HalfEdge();
-        //e1.origin = b1;
-        //e1.destination = b2;
-        //b1.incidentEdge = e1;
-        //HalfEdge e2 = new HalfEdge();
-        //e2.origin = b2;
-        //e2.destination = b3;
-        //b2.incidentEdge = e2;
-        //HalfEdge e3 = new HalfEdge();
-        //e3.origin = b3;
-        //e3.destination = b4;
-        //b3.incidentEdge = e3;
-        //HalfEdge e4 = new HalfEdge();
-        //e4.origin = b4;
-        //e4.destination = b1;
-        //b4.incidentEdge = e4;
-
         Face uf = new Face();
         uf.type = 1;
-
-        //e1.incidentFace = e2.incidentFace = e3.incidentFace = e4.incidentFace = uf;
-        //e1.next = e2;
-        //e1.prev = e4;
-        //e2.next = e3;
-        //e2.prev = e1;
-        //e3.next = e4;
-        //e3.prev = e2;
-        //e4.next = e1;
-        //e4.prev = e3;
-
-        ////twin edges
-        //HalfEdge e1t = new HalfEdge();
-        //e1t.twin = e1;
-        //e1.twin = e1t;
-        //e1t.destination = e1.origin;
-        //e1t.origin = e1.destination;
-        //HalfEdge e2t = new HalfEdge();
-        //e2t.twin = e2;
-        //e2.twin = e2t;
-        //e2t.destination = e2.origin;
-        //e2t.origin = e2.destination;
-        //HalfEdge e3t = new HalfEdge();
-        //e3t.twin = e3;
-        //e3.twin = e3t;
-        //e3t.destination = e3.origin;
-        //e3t.origin = e3.destination;
-        //HalfEdge e4t = new HalfEdge();
-        //e4t.twin = e4;
-        //e4.twin = e4t;
-        //e4t.destination = e4.origin;
-        //e4t.origin = e4.destination;
-
-        ////twin incident face will be set when making b5+ i think
-        //e1t.next = e4t;
-        //e1t.prev = e2t;
-        //e2t.next = e2t;
-        //e2t.prev = e3t;
-        //e3t.next = e2t;
-        //e3t.prev = e4t;
-        //e4t.next = e3t;
-        //e4t.prev = e1t;
-
         b1.boundIndex = 1;
         b2.boundIndex = 2;
         b3.boundIndex = 3;
@@ -624,20 +552,6 @@ public class fortune
         b2.bound = true;
         b3.bound = true;
         b4.bound = true;
-        //dcel.vertices.Add(b1);
-        //dcel.vertices.Add(b2);
-        //dcel.vertices.Add(b3);
-        //dcel.vertices.Add(b4);
-
-        //dcel.edges.Add(e1);
-        //dcel.edges.Add(e2);
-        //dcel.edges.Add(e3);
-        //dcel.edges.Add(e4);
-        //dcel.edges.Add(e1t);
-        //dcel.edges.Add(e2t);
-        //dcel.edges.Add(e3t);
-        //dcel.edges.Add(e4t);
-
         dcel.faces.Add(uf);
 
 
@@ -682,7 +596,7 @@ public class fortune
             if(e.origin == null||e.destination==null)
             {
                 Vector2 dirToCheck = -e.direction;
-                //Debug.Log(" on e" + (dcel.edges.IndexOf(e))+" " + dirToCheck);
+                ////Debug.Log(" on e" + (dcel.edges.IndexOf(e))+" " + dirToCheck);
                 //need to calc some length of line.
 
                 if(e.origin == null && e.destination == null) { continue; }
@@ -704,12 +618,12 @@ public class fortune
                     if(dirToCheck.x< 0)
                     {
                         //-y,-x
-                        //Debug.LogWarning("-x,-y on e" + (dcel.edges.IndexOf(e) + 1) + " " + dirToCheck);
-                        inter1 = CheckForIntersection(eStart, eEnd, b4.point, b3.point,null).Value;
+                        ////Debug.LogWarning("-x,-y on e" + (dcel.edges.IndexOf(e) + 1) + " " + dirToCheck);
+                        inter1 = CheckForIntersection(eStart, eEnd, b4.point, b3.point).Value;
                         float distancetoLeft = ((lowx - buffer) - eStart.x) / dirToCheck.x;
                         float distanceToBottom = Vector2.Distance(eStart, inter1);
-                        //Debug.LogWarning("distance to left " + distancetoLeft);
-                        //Debug.LogWarning("distance to bottom " + distanceToBottom);
+                        ////Debug.LogWarning("distance to left " + distancetoLeft);
+                        ////Debug.LogWarning("distance to bottom " + distanceToBottom);
                         if (distancetoLeft < distanceToBottom)
                         {
                             //add point to left
@@ -721,7 +635,7 @@ public class fortune
                             if (left.Find((x) => Vector2.Equals(x.point,v.point))== null)
                             {
                                 left.Add(v);
-                                //Debug.LogWarning("l " + point);
+                                ////Debug.LogWarning("l " + point);
                             }
                             if (e.destination == null)
                             {
@@ -746,7 +660,7 @@ public class fortune
                             if (bottom.Find((x) => Vector2.Equals(x.point, v.point)) == null)
                             {
                                  bottom.Add(v);
-                                //Debug.LogWarning("b " + point);
+                                ////Debug.LogWarning("b " + point);
                             }
                             if (e.destination == null)
                             {
@@ -764,12 +678,12 @@ public class fortune
                     else
                     {
                         //-y,x
-                        //Debug.LogWarning("x,-y on e" + (dcel.edges.IndexOf(e) + 1) + " " + dirToCheck);
-                        inter1 = CheckForIntersection(eStart, eEnd, b4.point, b3.point, null).Value;//bottom
+                        ////Debug.LogWarning("x,-y on e" + (dcel.edges.IndexOf(e) + 1) + " " + dirToCheck);
+                        inter1 = CheckForIntersection(eStart, eEnd, b4.point, b3.point).Value;//bottom
                         float distanceToRight = ((highx+ buffer) - eStart.x)/dirToCheck.x;
                         float distanceToBottom = Vector2.Distance(eStart, inter1);
-                        //Debug.LogWarning("distance to right " + distanceToRight);
-                        //Debug.LogWarning("distance to bottom " + distanceToBottom);
+                        ////Debug.LogWarning("distance to right " + distanceToRight);
+                        ////Debug.LogWarning("distance to bottom " + distanceToBottom);
                         if (distanceToRight < distanceToBottom)
                         {
                             Vertex v = new Vertex();
@@ -780,7 +694,7 @@ public class fortune
                             if (right.Find((x) => Vector2.Equals(x.point, v.point)) == null)
                             {
                                 right.Add(v);
-                                //Debug.LogWarning("r " + point);
+                                ////Debug.LogWarning("r " + point);
                             }
                             if (e.destination == null)
                             {
@@ -805,7 +719,7 @@ public class fortune
                             if (bottom.Find((x) => Vector2.Equals(x.point, v.point)) == null)
                             {
                                 bottom.Add(v);
-                                //Debug.LogWarning("b " + point);
+                                ////Debug.LogWarning("b " + point);
                             }
                             if (e.destination == null)
                             {
@@ -826,12 +740,12 @@ public class fortune
                     if (dirToCheck.x < 0)
                     {
                         //y,-x
-                        //Debug.LogWarning("-x,y on e" + (dcel.edges.IndexOf(e) + 1) + " " + dirToCheck);
-                        inter1 = CheckForIntersection(eStart, eEnd, b1.point, b2.point, null).Value;//up
+                        ////Debug.LogWarning("-x,y on e" + (dcel.edges.IndexOf(e) + 1) + " " + dirToCheck);
+                        inter1 = CheckForIntersection(eStart, eEnd, b1.point, b2.point).Value;//up
                         float distanceToRight = ((lowx - buffer) - eStart.x) / dirToCheck.x; //left
                         float distanceToBottom = Vector2.Distance(eStart, inter1);
-                        //Debug.LogWarning("distance to left " + distanceToRight);
-                        //Debug.LogWarning("distance to top " + distanceToBottom);
+                        ////Debug.LogWarning("distance to left " + distanceToRight);
+                        ////Debug.LogWarning("distance to top " + distanceToBottom);
                         if (distanceToRight < distanceToBottom)
                         {
                             //add point to left
@@ -843,7 +757,7 @@ public class fortune
                             if (left.Find((x) => Vector2.Equals(x.point, v.point)) == null)
                             {
                                 left.Add(v);
-                                //Debug.LogWarning("l " + point);
+                                ////Debug.LogWarning("l " + point);
                             }
                             if (e.destination == null)
                             {
@@ -868,7 +782,7 @@ public class fortune
                             if (top.Find((x) => Vector2.Equals(x.point, v.point)) == null)
                             {
                                 top.Add(v);
-                                //Debug.LogWarning("t " + point);
+                                ////Debug.LogWarning("t " + point);
                             }
                             if (e.destination == null)
                             {
@@ -886,12 +800,12 @@ public class fortune
                     else
                     {
                         //y,x
-//                        Debug.LogWarning("x,y on e" + (dcel.edges.IndexOf(e) + 1) + " " + dirToCheck);
-                        inter1 = CheckForIntersection(eStart, eEnd, b1.point, b2.point, null).Value;//up
+//                        //Debug.LogWarning("x,y on e" + (dcel.edges.IndexOf(e) + 1) + " " + dirToCheck);
+                        inter1 = CheckForIntersection(eStart, eEnd, b1.point, b2.point).Value;//up
                         float distanceToRight = ((highx + buffer) - eStart.x) / dirToCheck.x; //right
                         float distanceToBottom = Vector2.Distance(eStart, inter1);
-                        //Debug.LogWarning("distance to right " + distanceToRight);
-                        //Debug.LogWarning("distance to top " + distanceToBottom);
+                        ////Debug.LogWarning("distance to right " + distanceToRight);
+                        ////Debug.LogWarning("distance to top " + distanceToBottom);
                         if (distanceToRight < distanceToBottom)
                         {
                             //add point to right
@@ -903,7 +817,7 @@ public class fortune
                             if (right.Find((x) => Vector2.Equals(x.point, v.point)) == null)
                             {
                                 right.Add(v);
-                                //Debug.LogWarning("r " + point);
+                                ////Debug.LogWarning("r " + point);
                             }
                             if (e.destination == null)
                             {
@@ -928,7 +842,7 @@ public class fortune
                             if (top.Find((x) => Vector2.Equals(x.point, v.point)) == null)
                             {
                                 top.Add(v);
-                                //Debug.LogWarning("t " + point);
+                                ////Debug.LogWarning("t " + point);
                             }
                             if (e.destination == null)
                             {
@@ -963,7 +877,7 @@ public class fortune
         {
             message += v.point + " ";
         }
-        Debug.LogWarning(message);
+        //Debug.LogWarning(message);
 
 
         borderCount = 1;
@@ -972,7 +886,7 @@ public class fortune
             finalBoundVertex[i].boundIndex = borderCount++;
             if (finalBoundVertex[i].boundEdge != null)
             {
-                Debug.LogWarning(finalBoundVertex[i].boundIndex + " has an edge");
+                //Debug.LogWarning(finalBoundVertex[i].boundIndex + " has an edge");
             }
             
             HalfEdge e = new HalfEdge();
@@ -1004,21 +918,21 @@ public class fortune
                 if (v.boundEdge.isLeft)
                 {//use normal dir
                     directionFromPoint = (v.point - v.boundEdge.destination.point).normalized;
-                    Debug.Log("1 " + directionFromPoint + " " + v.boundEdge.direction + " " + v.boundEdge.twin.direction);
+                    //Debug.Log("1 " + directionFromPoint + " " + v.boundEdge.direction + " " + v.boundEdge.twin.direction);
                     if (directionFromPoint == v.boundEdge.twin.direction)
                     {
                         useTwin = true;
-                        Debug.Log("using twin");
+                        //Debug.Log("using twin");
                     }
                 }
                 else
                 {//negate dir
                     directionFromPoint = (v.point - v.boundEdge.origin.point).normalized;
-                    Debug.Log("2 " + directionFromPoint + " " + -v.boundEdge.direction + " " + -v.boundEdge.twin.direction);
+                    //Debug.Log("2 " + directionFromPoint + " " + -v.boundEdge.direction + " " + -v.boundEdge.twin.direction);
                     if (directionFromPoint == -v.boundEdge.twin.direction)
                     {
                         useTwin = true;
-                        Debug.Log("using twin");
+                        //Debug.Log("using twin");
                     }
                 }
 
@@ -1059,21 +973,21 @@ public class fortune
                     if (finalBoundVertex[i + 1].boundEdge.isLeft)
                     {//use normal dir
                         directionFromPoint = (v.point - finalBoundVertex[i + 1].boundEdge.destination.point).normalized;
-                        Debug.Log("3 " + directionFromPoint + " " + finalBoundVertex[i + 1].boundEdge.direction + " " + finalBoundVertex[i + 1].boundEdge.twin.direction);
+                        //Debug.Log("3 " + directionFromPoint + " " + finalBoundVertex[i + 1].boundEdge.direction + " " + finalBoundVertex[i + 1].boundEdge.twin.direction);
                         if (directionFromPoint == finalBoundVertex[i + 1].boundEdge.twin.direction)
                         {
                             useTwin = true;
-                            Debug.Log("using twin");
+                            //Debug.Log("using twin");
                         }
                     }
                     else
                     {//negate dir
                         directionFromPoint = (v.point - finalBoundVertex[i + 1].boundEdge.origin.point).normalized;
-                        Debug.Log("4 " + directionFromPoint + " " + -finalBoundVertex[i + 1].boundEdge.direction + " " + -finalBoundVertex[i + 1].boundEdge.twin.direction);
+                        //Debug.Log("4 " + directionFromPoint + " " + -finalBoundVertex[i + 1].boundEdge.direction + " " + -finalBoundVertex[i + 1].boundEdge.twin.direction);
                         if (directionFromPoint == -finalBoundVertex[i + 1].boundEdge.twin.direction)
                         {
                             useTwin = true;
-                            Debug.Log("using twin");
+                            //Debug.Log("using twin");
                         }
                     }
                     if (!finalBoundVertex[i + 1].boundEdge.isLeft)
@@ -1109,21 +1023,21 @@ public class fortune
                     if (finalBoundVertex[i + 1].boundEdge.isLeft)
                     {//use normal dir
                         directionFromPoint = (v.point - finalBoundVertex[0].boundEdge.destination.point).normalized;
-                        Debug.Log("3 " + directionFromPoint + " " + finalBoundVertex[0].boundEdge.direction + " " + finalBoundVertex[0].boundEdge.twin.direction);
+                        //Debug.Log("3 " + directionFromPoint + " " + finalBoundVertex[0].boundEdge.direction + " " + finalBoundVertex[0].boundEdge.twin.direction);
                         if (directionFromPoint == finalBoundVertex[0].boundEdge.twin.direction)
                         {
                             useTwin = true;
-                            Debug.Log("using twin");
+                            //Debug.Log("using twin");
                         }
                     }
                     else
                     {//negate dir
                         directionFromPoint = (v.point - finalBoundVertex[0].boundEdge.origin.point).normalized;
-                        Debug.Log("4 " + directionFromPoint + " " + -finalBoundVertex[0].boundEdge.direction + " " + -finalBoundVertex[0].boundEdge.twin.direction);
+                        //Debug.Log("4 " + directionFromPoint + " " + -finalBoundVertex[0].boundEdge.direction + " " + -finalBoundVertex[0].boundEdge.twin.direction);
                         if (directionFromPoint == -finalBoundVertex[0].boundEdge.twin.direction)
                         {
                             useTwin = true;
-                            Debug.Log("using twin");
+                            //Debug.Log("using twin");
                         }
                     }
 
@@ -1142,14 +1056,14 @@ public class fortune
                 }
                 else
                 {
-                    Debug.LogWarning("in here");
+                    ////Debug.LogWarning("in here");
 
                     e.next = finalBoundVertex[0].incidentEdge;
                     finalBoundVertex[0].incidentEdge.prev = e;
                     e.incidentFace = finalBoundVertex[0].incidentEdge.incidentFace;
 
                     if (finalBoundVertex[i].boundEdge == null) {
-                        Debug.LogWarning("in here");
+//                        //Debug.LogWarning("in here");
 
                         e.prev = finalBoundVertex[i - 1].incidentEdge;
                     }
@@ -1170,7 +1084,7 @@ public class fortune
             twinEdge.twin = e;
             e.twin = twinEdge;
             twinEdge.incidentFace = uf;
-            uf.outterComponent = twinEdge;
+            uf.innerComponent = twinEdge;
             if(i > 0 && i < finalBoundVertex.Count - 1)
             {
                 twinEdge.prev = finalBoundVertex[i - 1].incidentEdge.twin;
@@ -1190,24 +1104,31 @@ public class fortune
         }
 
 
+
         return dcel;
     }
-    /*
-     * 
-     * WHEN PRINTING BREAKPOINT MADE ARC MAKE SURE TO CHECK IS LEFT
-     * IF IT IS THE RIGHT ARC THEN BASE FOCUS OFF SITE2
-     */
+
+
+    DCEL calcDelaunay()
+    {
+
+
+
+
+        return delaunayDcel;
+    }
+        
     void handleCircleEvent(Node n,List<GameObject> drawnOjects, float directX)
     {
 
         if (!n.valid)
         {
-            //Debug.LogWarning("INVALID CIRCLE EVENT!");
+            ////Debug.LogWarning("INVALID CIRCLE EVENT!");
             return;
         }
         else
         {
-            //Debug.LogWarning("valid circle");
+            ////Debug.LogWarning("valid circle");
         }
 
         /*
@@ -1225,8 +1146,8 @@ public class fortune
         //add it at the site of the intersection and have it point down bisector
 
         //setting the left and right endpoints
-        ////Debug.Log("edge " + n.leftEdge.direction + " " + n.leftEdge.startingDir + " " + n.leftEdge.site.point + " " + n.leftEdge.key);
-        ////Debug.Log("edge " + n.rightEdge.direction + " " + n.rightEdge.startingDir + " " + n.rightEdge.site.point + " " + n.rightEdge.key);
+        //////Debug.Log("edge " + n.leftEdge.direction + " " + n.leftEdge.startingDir + " " + n.leftEdge.site.point + " " + n.leftEdge.key);
+        //////Debug.Log("edge " + n.rightEdge.direction + " " + n.rightEdge.startingDir + " " + n.rightEdge.site.point + " " + n.rightEdge.key);
 
         foreach (GameObject g in drawnOjects)
         {
@@ -1265,11 +1186,11 @@ public class fortune
         //if leftbp, squuzing site2 of n
         //left and right site need to be the other
 
-        //Debug.Log("squeezing " + n.site4.point);
+        ////Debug.Log("squeezing " + n.site4.point);
         Site leftSite = n.site2;
         Site rightSite = n.site3;
-        //Debug.Log("leftSite" + leftSite.point );
-        //Debug.Log("rightsite" + rightSite.point);
+        ////Debug.Log("leftSite" + leftSite.point );
+        ////Debug.Log("rightsite" + rightSite.point);
 
         //direction of edge
         
@@ -1280,12 +1201,12 @@ public class fortune
         edgeR = new Node(new Vector2(n.intersection.x, calcYline(slope, n.intersection.x, midX, midY)).x);
         if(leftSite.point.y < rightSite.point.y)
         {
-            ////Debug.Log("new edge is right");
+            //////Debug.Log("new edge is right");
             edgeR.isLeft = false;
         }
         else
         {
-           // //Debug.Log("new edge is left");
+           // ////Debug.Log("new edge is left");
             edgeR.isLeft = true;
         }
 
@@ -1296,7 +1217,7 @@ public class fortune
         if (n.leftEdge.isLeft && n.rightEdge.isLeft)
         {
             edgeR.isLeft = true;
-//            //Debug.LogWarning("its in it");
+//            ////Debug.LogWarning("its in it");
         }
 
 
@@ -1360,7 +1281,7 @@ public class fortune
         e.end = edgeR.startingDir + edgeR.direction * Vector2.Distance(breakPoint, n.intersection);
         edgeR.edgeObject = eObj;
 
-        ////Debug.Log(edgeR.isLeft + "new edge " + edgeR.direction + " " + edgeR.startingDir + " " + edgeR.site.point + " " + edgeR.site2.point + " " + edgeR.key + " " + edgeR.lineEnd);
+        //////Debug.Log(edgeR.isLeft + "new edge " + edgeR.direction + " " + edgeR.startingDir + " " + edgeR.site.point + " " + edgeR.site2.point + " " + edgeR.key + " " + edgeR.lineEnd);
 
         //beachLine.insert(edgeR,true);
         //beachLine.delete(n.rightEdge);
@@ -1375,7 +1296,7 @@ public class fortune
          */
         if(n.nodeToRemove.site2 != null)
         {
-            //Debug.LogWarning(n.nodeToRemove.site.point + " " + n.nodeToRemove.site2.point +" left key  "+ n.leftEdge.key + " right key " + n.rightEdge.key);
+            ////Debug.LogWarning(n.nodeToRemove.site.point + " " + n.nodeToRemove.site2.point +" left key  "+ n.leftEdge.key + " right key " + n.rightEdge.key);
 
         }
         Node temp = null;
@@ -1396,7 +1317,7 @@ public class fortune
             uhoh++;
             if(uhoh > 1000)
             {
-                //Debug.LogError("hti hoh no");
+                ////Debug.LogError("hti hoh no");
                 break;
             }
             if(leftToUse == null)
@@ -1429,10 +1350,10 @@ public class fortune
 
         if (n.nodeToRemove.parent == rightToUse)
         {
-            //Debug.LogWarning("parent is right edge");
+            ////Debug.LogWarning("parent is right edge");
             if (rightToUse.parent == leftToUse)
             {
-                //Debug.LogWarning("idk if this is actualy a possible state in right");
+                ////Debug.LogWarning("idk if this is actualy a possible state in right");
                 //insert new edge first
                 if (leftToUse != beachLine.root)
                 {
@@ -1448,7 +1369,7 @@ public class fortune
                 }
                 else
                 {
-                    //Debug.LogWarning("edge is now root");
+                    ////Debug.LogWarning("edge is now root");
 
                     beachLine.root = edgeR;
                 }
@@ -1462,7 +1383,7 @@ public class fortune
             }
             else
             {
-                //Debug.LogWarning("no here");
+                ////Debug.LogWarning("no here");
                 //put sibling in its spot
                 if (rightToUse.parent.left == rightToUse)
                 {
@@ -1488,7 +1409,7 @@ public class fortune
                 }
                 else
                 {
-                    //Debug.LogWarning("is now root");
+                    ////Debug.LogWarning("is now root");
                     beachLine.root = edgeR;
                 }
                 edgeR.right = leftToUse.right;
@@ -1499,10 +1420,10 @@ public class fortune
         }
         else if(n.nodeToRemove.parent == leftToUse)
         {
-            //Debug.LogWarning("parent is left edge");
+            ////Debug.LogWarning("parent is left edge");
             if (leftToUse.parent == rightToUse)
             {
-                //Debug.LogWarning("idk if this is actualy a possible state in left");
+                ////Debug.LogWarning("idk if this is actualy a possible state in left");
                 //insert new edge first
                 if (rightToUse != beachLine.root)
                 {
@@ -1528,7 +1449,7 @@ public class fortune
             }
             else
             {
-                //Debug.LogWarning("no here");
+                ////Debug.LogWarning("no here");
                 //put sibling in its spot
                 if (leftToUse.parent.left == leftToUse)
                 {
@@ -1555,7 +1476,7 @@ public class fortune
                 }
                 else
                 {
-                    //Debug.LogWarning("is now root");
+                    ////Debug.LogWarning("is now root");
                     beachLine.root = edgeR;
                 }
                 edgeR.right = rightToUse.right;
@@ -1763,7 +1684,7 @@ public class fortune
             {
                 if (p.nodeToRemove == n.nodeToRemove && p.site != n.site)
                 {
-                    //Debug.LogWarning("invalid event at " + p.intersection);
+                    ////Debug.LogWarning("invalid event at " + p.intersection);
                     p.valid = false;
                     foreach (GameObject g in drawnOjects)
                     {
@@ -1793,12 +1714,12 @@ public class fortune
     {
         if(arc.site2 != null)
         {
-            //Debug.LogWarning("CHECKING ARC " + arc.site.point + " " + arc.site2.point + " " + arc.key);
+            ////Debug.LogWarning("CHECKING ARC " + arc.site.point + " " + arc.site2.point + " " + arc.key);
             
         }
         else
         {
-            //Debug.LogWarning("CHECKING ARC " + arc.site.point + " "+arc.key);
+            ////Debug.LogWarning("CHECKING ARC " + arc.site.point + " "+arc.key);
 
         }
         /*
@@ -1833,7 +1754,7 @@ public class fortune
             uhoh++;
             if(uhoh > 1000)
             {
-                //Debug.LogError("hit uhoh in check circle event");
+                ////Debug.LogError("hit uhoh in check circle event");
                 break;
             }
             if(leftEdge == null)
@@ -1876,16 +1797,16 @@ public class fortune
             low = rightEdge;
             high = leftEdge;
         }
-        ////Debug.Log("left edge " + leftEdge.direction + " " + leftEdge.startingDir + " " + leftEdge.site.point + " key " + leftEdge.key);
-        ////Debug.Log("right edge " + rightEdge.direction + " " + rightEdge.startingDir + " " + rightEdge.site.point + " key " + rightEdge.key);
-        Vector2? intersection = CheckForIntersection(low.startingDir, low.lineEnd, high.startingDir, high.lineEnd, drawnOjects);
+        //////Debug.Log("left edge " + leftEdge.direction + " " + leftEdge.startingDir + " " + leftEdge.site.point + " key " + leftEdge.key);
+        //////Debug.Log("right edge " + rightEdge.direction + " " + rightEdge.startingDir + " " + rightEdge.site.point + " key " + rightEdge.key);
+        Vector2? intersection = CheckForIntersection(low.startingDir, low.lineEnd, high.startingDir, high.lineEnd);
         if (intersection.HasValue)
         {
 
             
             //low = leftEdge;
             //high = rightEdge;
-          //  if (low.direction.y < 0 && high.direction.y > 0) { //Debug.LogWarning("2"); return; }
+          //  if (low.direction.y < 0 && high.direction.y > 0) { ////Debug.LogWarning("2"); return; }
             if(intersection.Value.x < low.startingDir.x)
             {
                 if(low.direction.x > 0) {  return; }
@@ -1902,15 +1823,15 @@ public class fortune
             {
                 if (high.direction.x < 0) { return; }
             }
-            //Debug.Log("low edge " + low.direction + " " + low.startingDir + " " + low.site.point + low.site2.point + " key " + low.key + " " + low.lineEnd + " " + low.isLeft) ;
+            ////Debug.Log("low edge " + low.direction + " " + low.startingDir + " " + low.site.point + low.site2.point + " key " + low.key + " " + low.lineEnd + " " + low.isLeft) ;
             if (arc.site2 != null)
             {
-                //Debug.Log(arc.site2.point + " at " + intersection);
+                ////Debug.Log(arc.site2.point + " at " + intersection);
             }
-            //Debug.Log(arc.site.point + " at " + intersection);
-            //Debug.Log("high edge " + high.direction + " " + high.startingDir + " " + high.site.point + high.site2.point + " key " + high.key + " " + high.lineEnd + " " + high.isLeft);
+            ////Debug.Log(arc.site.point + " at " + intersection);
+            ////Debug.Log("high edge " + high.direction + " " + high.startingDir + " " + high.site.point + high.site2.point + " key " + high.key + " " + high.lineEnd + " " + high.isLeft);
             float directXInter = intersection.Value.y - Vector2.Distance(arc.site.point, intersection.Value)    ;
-            // //Debug.Log("DIRECT X INTERSECTION Y VALUIE: " + directXInter);
+            // ////Debug.Log("DIRECT X INTERSECTION Y VALUIE: " + directXInter);
 
             //drawing intersection
             GameObject inter = GameObject.Instantiate(drawable[1], new Vector3(intersection.Value.x, intersection.Value.y, 0), Quaternion.identity);
@@ -1932,12 +1853,12 @@ public class fortune
             {
                 if (!arc.isLeft)
                 {
-                    ////Debug.Log("squeezing " + arc.site2.point);
+                    //////Debug.Log("squeezing " + arc.site2.point);
                     squeeze = arc.site2;
                 }
                 else
                 {
-                    ////Debug.Log("squeezing " + arc.site.point);
+                    //////Debug.Log("squeezing " + arc.site.point);
                     squeeze = arc.site;
                 }
             }
@@ -2056,8 +1977,7 @@ public class fortune
 
         return new Vector2(x, y);
     }
-
-    Vector2? CheckForIntersection(Vector2 line1Start, Vector2 line1End,Vector2 line2Start,Vector2 line2End, List<GameObject> drawnOjects)
+    Vector2? CheckForIntersection(Vector2 line1Start, Vector2 line1End,Vector2 line2Start,Vector2 line2End)
     {
         float m1 = (line1End.y - line1Start.y) / (line1End.x - line1Start.x);
         float b1 = line1Start.y - m1 * line1Start.x;
@@ -2067,7 +1987,7 @@ public class fortune
 
         if (m1 == m2)
         {
-           // //Debug.Log("Lines are parallel, no intersection.");
+           // ////Debug.Log("Lines are parallel, no intersection.");
             return null;
         }
         else
@@ -2079,7 +1999,6 @@ public class fortune
             
         }
     }
-
     GameObject createArcObject(Vector3 loc, Vector3 start, Vector3 end)
     {
         GameObject arc = GameObject.Instantiate(drawable[3], loc, Quaternion.identity);
@@ -2091,5 +2010,9 @@ public class fortune
         drawable.Add(arc);
         return arc;
     }
+
+
+
+
 }
 

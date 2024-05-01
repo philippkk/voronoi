@@ -43,7 +43,8 @@ public class controller : MonoBehaviour
 
         for(int i =0; i < transform.childCount; i++)
         {
-            pointLocations.Add(transform.GetChild(i).gameObject);
+            if(transform.GetChild(i).gameObject.active)
+                pointLocations.Add(transform.GetChild(i).gameObject);
         }
 
 
@@ -352,55 +353,99 @@ public class controller : MonoBehaviour
             dcelText.text += "\n";
             foreach (Face f in dcel.faces)
                 {
-                    if(f.type == 1)
+                if (f.type == 1)
+                {
+                    dcelText.text += "uf nil";
+                    if (f.innerComponent != null)
                     {
-                        dcelText.text += "uf nil e";
-                    if(f.outterComponent == null) { continue; }
-                    if (f.outterComponent.origin.bound)
-                    {
-                        dcelText.text += "b" + f.outterComponent.origin.boundIndex;
-                    }
-                    else
-                    {
-                        dcelText.text += "b"+(dcel.vertices.IndexOf(f.outterComponent.origin) + 1);
-                    }
-                    if (f.outterComponent.destination.bound)
-                    {
-                        dcelText.text += ",b" + f.outterComponent.destination.boundIndex;
-                    }
-                    else
-                    {
-                        dcelText.text += "," + (dcel.vertices.IndexOf(f.outterComponent.destination) + 1);
-                    }
-                    }
-                    else
-                    {
-                        dcelText.text += "f" + (dcel.faces.IndexOf(f) + 1);
-                        if (f.outterComponent == null)
+                        if (f.innerComponent.origin.bound)
                         {
-                            dcelText.text += " nil";
+                            dcelText.text += " eb" + f.innerComponent.origin.boundIndex;
                         }
                         else
                         {
-                            dcelText.text += " e" + (dcel.vertices.IndexOf(f.outterComponent.origin) + 1) + "," + (dcel.vertices.IndexOf(f.outterComponent.destination) + 1);
+                            dcelText.text += " e" + (dcel.vertices.IndexOf(f.innerComponent.origin) + 1);
                         }
-                        if (f.innerComponents.Count == 0)
+                        if (f.innerComponent.destination.bound)
                         {
-                            dcelText.text += " nil";
+                            dcelText.text += ",b" + f.innerComponent.destination.boundIndex;
                         }
                         else
                         {
-                            dcelText.text += "todo";
+                            dcelText.text += "," + (dcel.vertices.IndexOf(f.innerComponent.destination) + 1);
                         }
-                        dcelText.text += "\n";
                     }
+                    else
+                    {
+                        dcelText.text += " nil";
+                    }
+
+
+                    //dcelText.text += " nil";
+                }
+                else
+                {
+                    dcelText.text += "f" + (dcel.faces.IndexOf(f) + 1);
+                    if (f.outterComponent != null)
+                    {
+                        if (f.outterComponent.origin.bound)
+                        {
+                            dcelText.text += " eb" + f.outterComponent.origin.boundIndex;
+                        }
+                        else
+                        {
+                            dcelText.text += " b" + (dcel.vertices.IndexOf(f.outterComponent.origin) + 1);
+                        }
+                        if (f.outterComponent.destination.bound)
+                        {
+                            dcelText.text += ",b" + f.outterComponent.destination.boundIndex;
+                        }
+                        else
+                        {
+                            dcelText.text += "," + (dcel.vertices.IndexOf(f.outterComponent.destination) + 1);
+                        }
+                    }
+                    else
+                    {
+                        dcelText.text += " nil";
+                    }
+                    if (f.innerComponent != null)
+                    {
+                        if (f.innerComponent.origin.bound)
+                        {
+                            dcelText.text += " eb" + f.innerComponent.origin.boundIndex;
+                        }
+                        else
+                        {
+                            dcelText.text += "b" + (dcel.vertices.IndexOf(f.innerComponent.origin) + 1);
+                        }
+                        if (f.innerComponent.destination.bound)
+                        {
+                            dcelText.text += ",b" + f.innerComponent.destination.boundIndex;
+                        }
+                        else
+                        {
+                            dcelText.text += "," + (dcel.vertices.IndexOf(f.innerComponent.destination) + 1);
+                        }
+                    }
+                    else
+                    {
+                        dcelText.text += " nil";
+                    }
+
+                }
+               
+                    
+                    dcelText.text += "\n";
+                    
                     
                 }
             dcelText.text += "\n";
             foreach (HalfEdge e in dcel.edges)
                 {
-                dcelText.text += "e";
+                
                 if (e.origin == null) { continue; }
+                dcelText.text += "e";
                 if (e.origin.bound)
                 {
                     dcelText.text += "b" + e.origin.boundIndex;
@@ -468,7 +513,7 @@ public class controller : MonoBehaviour
                     if (e.incidentFace == null){dcelText.text += " nil";}
                     else
                     {
-                    dcelText.text += " f" + dcel.faces.IndexOf(e.incidentFace);
+                    dcelText.text += " f" + (dcel.faces.IndexOf(e.incidentFace)+1);
                     }
                     if(e.next == null){dcelText.text += " nil";}
                     else

@@ -286,7 +286,7 @@ public class Face
 {
     public int type = 0;
     public HalfEdge outterComponent;
-    public List<HalfEdge> innerComponents = new List<HalfEdge>();
+    public HalfEdge innerComponent;
     public Vertex incidentVertex;
     public Site site;
 }

@@ -2,7 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+using TMPro;
 public class Node
 {
     public Node left;
@@ -17,8 +17,10 @@ public class Node
     public float midX, midY,slope;
     public Vector2 direction = Vector2.positiveInfinity;
     public Vector2 startingDir,lineEnd,intersection;
-    public Site site;
-    public Site site2;
+    public Site site; //on edge its the origin edge/below edge
+    public Site site2;//for breakpoint on edge its the edge above
+    public Site site3;//for circl
+    public Site site4;//squeeze site for circle e
     public GameObject edgeObject;
 
     public Node leftbp, rightbp;
@@ -26,8 +28,16 @@ public class Node
     //for circleEvent
     public Node leftEdge;
     public Node rightEdge;
+    public Site leftArc;
+    public Site rightArc;
     public Node nodeToRemove;
-    
+    public bool valid = true;
+
+    //for dcel
+    public HalfEdge DCELedge;
+
+
+
     public Node prev;
     public Node next;
 
@@ -142,7 +152,7 @@ public class SplayTree
             }
         }
     }
-    public void insert(Node n)
+    public void insert(Node n,bool s)
     {
         Node y = null;
         Node temp = this.root;
@@ -175,7 +185,8 @@ public class SplayTree
             y.right = n;
             n.parent = y; 
         }
-        this.splay(n);
+        if(s)
+            this.splay(n);
     }
     public Node search(Node n, float x)
     {
@@ -183,9 +194,9 @@ public class SplayTree
         {
             return null;
         }
-        if (x == n.key)
+        if (Mathf.Approximately(x,n.key))
         {
-            this.splay(n);
+            //this.splay(n);
             return n;
         }else if(x < n.key)
         {
@@ -203,58 +214,57 @@ public class SplayTree
     {
         if (n == null)
         {
+            //Debug.Log("done");
             return;
         }
         if (arc) {
-            if (Mathf.Approximately(x, n.key) && n.site2 == null && !n.isEdge)
+            if (n.isEdge)
             {
-                min_diff_key = 0;
-                return;
-            }
-            if (min_diff > Mathf.Abs(n.key - x) && n.site2 == null && !n.isEdge)
-            {
-                min_diff = Mathf.Abs(n.key - x);
-                min_diff_key = n.key;
-            }
-            if (x < n.key && n.site2 == null && !n.isEdge)
-            {
-                searchNearUtil(n.left, x, arc);
-            }
-            else if (x > n.key && n.site2 == null && !n.isEdge)
-            {
-                searchNearUtil(n.right, x, arc);
-            }
-        }
-        else
-        {
-            if (Mathf.Approximately(x, n.key))
-            {
-                min_diff_key = 0;
-                return;
-            }
-            if (min_diff > Mathf.Abs(n.key - x))
-            {
-                min_diff = Mathf.Abs(n.key - x);
-                min_diff_key = n.key;
-            }
-            if (x < n.key)
-            {
-                searchNearUtil(n.left, x, arc);
+                if (x > n.lineEnd.x)
+                {
+                    //Debug.Log("right on edge " + n.key +" "+ n.lineEnd.x);
+                    searchNearUtil(n.right, x, arc);
+                }
+                else
+                {
+                    //Debug.Log("left on edge " + n.key + " " + n.lineEnd.x);
+                    searchNearUtil(n.left, x, arc);
+                }
             }
             else
             {
-                searchNearUtil(n.right, x, arc);
-            }
-        }
+                if (Mathf.Approximately(x, n.key) && !n.isEdge)
+                {
+                    min_diff_key = n.key;
+                    //Debug.Log("done");
+                    return;
+                }
+                if (min_diff > Mathf.Abs(n.key - x) && !n.isEdge)
+                {
+                    min_diff = Mathf.Abs(n.key - x);
+                    min_diff_key = n.key;
+                }
 
-        
-        
+                if (x < n.key && !n.isEdge)
+                {
+                    //Debug.Log("left " + n.key);
+                    searchNearUtil(n.left, x, arc);
+                }
+                else if (x > n.key && !n.isEdge)
+                {
+                    //Debug.Log("right " + n.key);
+                    searchNearUtil(n.right, x, arc);
+                }
+            }
+            
+        }
+      
     }
     public Node searchNear(Node n,float x,bool arc)
     {
         if (n == null)
         {
-            Debug.Log("NULL ROOT?????");
+            //Debug.Log("NULL ROOT?????");
             return null;
         }
 
@@ -268,7 +278,7 @@ public class SplayTree
     public void delete(Node n)
     {
         this.splay(n);
-        //Debug.Log("in delete:" + this.root.key);
+        ////Debug.Log("in delete:" + this.root.key);
         SplayTree leftSubtree = new SplayTree();
         leftSubtree.root = this.root.left;
         if (leftSubtree.root != null)
@@ -298,6 +308,25 @@ public class SplayTree
         {
             this.root = rightSubtree.root;
         }
+
+        //if (!this.root.isEdge)
+        //{
+        //    if(this.root.right != null)
+        //    {
+        //        if (this.root.right.isEdge)
+        //        {
+        //            splay(this.root.right);
+        //        }
+        //    }
+        //    if (this.root.left != null)
+        //    {
+        //        if (this.root.left.isEdge)
+        //        {
+        //            splay(this.root.left);
+        //        }
+        //    }
+                
+        //}
     }
 
     public List<Node> inorder(Node n,List<Node> visitedNodes,bool print)
@@ -310,27 +339,27 @@ public class SplayTree
                 {
                     if(n.parent == null && n != root)
                     {
-                        Debug.Log("NO PARENT FOR BELOW");
+                        //Debug.Log("NO PARENT FOR BELOW");
                     }
-                    Debug.Log("edge " + n.direction + " " + n.startingDir+ " "+n.site.point+" "+n.key);
+                    //Debug.Log(n.isLeft + " edge " + n.direction + " " + n.startingDir+ " "+n.site.point + " " + n.site2.point + " "+n.key + " " + n.lineEnd + " " + n.isLeft);
 
                 }
                 else if (n.site2 != null)
                 {
                     if (n.parent == null && n != root)
                     {
-                        Debug.Log("NO PARENT FOR BELOW");
+                        //Debug.Log("NO PARENT FOR BELOW");
                     }
-                    Debug.Log("break point: " + n.site.point.ToString() + " AND " + n.site2.point.ToString()
-                        + " " + n.key + " " + n.startingDir);
+                    //Debug.Log("break point: " + n.site.point.ToString() + " AND " + n.site2.point.ToString()
+                       // + " " + n.key + " " + n.startingDir + " " + n.isLeft);
                 }
                 else if (n.site != null)
                 {
                     if (n.parent == null && n != root)
                     {
-                        Debug.Log("NO PARENT FOR BELOW");
+                        //Debug.Log("NO PARENT FOR BELOW");
                     }
-                    Debug.Log("arc: " + n.site.point.ToString() + " "+n.key);
+                    //Debug.Log("arc: " + n.site.point.ToString() + " "+n.key + " " + n.isLeft);
                 }
             }
             visitedNodes.Add(n);
@@ -339,6 +368,90 @@ public class SplayTree
         }
         return visitedNodes;
     }
+    public void reverseInOrder(Node n, int indent,TMP_Text text)
+    {
+        if (n != null)
+        {
+            indent++;
+            reverseInOrder(n.right, indent,text);
+
+            for (int i = 0; i < indent; i++)
+            {
+                text.text+="        ";
+            }
+           // text.text+="level: " + indent + " " + n.key + "\n";
+            if (n.isEdge)
+            {
+                text.text += "edge " + n.direction + " " + n.startingDir + " " + n.site.point + " " + n.site2.point + " " + n.key + " " + n.isLeft + "\n";
+            }
+            else if (n.site2 != null)
+            {
+                text.text += "break point: " + n.site.point.ToString() + " AND " + n.site2.point.ToString()
+                    + " " + n.key + " " + n.startingDir + " " + n.isLeft + "\n";
+            }
+            else if (n.site != null)
+            {
+                text.text += ("arc: " + n.site.point.ToString() + " " + n.key + " " + n.isLeft + "\n");
+            }
+
+            reverseInOrder(n.left, indent,text);
+        }
+    }
 }
 
+/*
+ *   //Debug.LogWarning("idk if this is actualy a possible state in right");
+                //insert new edge first
+                if (n.leftEdge != beachLine.root)
+                {
+                    if (n.leftEdge.parent.left == n.leftEdge)
+                    {
+                        n.leftEdge.parent.left = edgeR;
+                    }
+                    else
+                    {
+                        n.leftEdge.parent.right = edgeR;
+                    }
+                    edgeR.parent = n.leftEdge.parent;
+                }
+                else
+                {
+                    //Debug.LogWarning("edge is now root");
 
+                    beachLine.root = edgeR;
+                }
+                n.leftEdge.left.parent = edgeR;
+                edgeR.left = n.leftEdge.left;
+                //set sibling in its spots
+                edgeR.right = n.rightEdge.right;
+                n.rightEdge.right.parent = edgeR;
+ * 
+ * 
+ * 
+ * 
+ *  Vector2? CheckForIntersection(Vector2 line1Start, Vector2 line1End,Vector2 line2Start,Vector2 line2End, List<GameObject> drawnOjects)
+    {
+        float m1 = (line1End.y - line1Start.y) / (line1End.x - line1Start.x);
+        float b1 = line1Start.y - m1 * line1Start.x;
+
+        float m2 = (line2End.y - line2Start.y) / (line2End.x - line2Start.x);
+        float b2 = line2Start.y - m2 * line2Start.x;
+
+        if (m1 == m2)
+        {
+           // //Debug.Log("Lines are parallel, no intersection.");
+            return null;
+        }
+        else
+        {
+            float x = (b2 - b1) / (m1 - m2);
+            float y = m1 * x + b1;
+           // //Debug.Log("Intersection at (" + x + ", " + y + ")");
+
+            return new Vector2(x, y);
+            
+        }
+    }
+
+ * 
+ */

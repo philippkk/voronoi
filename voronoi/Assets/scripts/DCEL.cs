@@ -260,23 +260,35 @@ public class Site //INPUT POINTS
 }
 public class Vertex //POINTS OF VORONOI
 {
+    public int boundIndex;
+    public bool bound = false;
     public Vector2 point;
     public HalfEdge incidentEdge;
+    public int type = 0;
+
+
+    public HalfEdge boundEdge; //the edge that created the point
 }
 public class HalfEdge
 {
+    public bool bound = false;
     public Vertex origin;
     public Vertex destination;
     public HalfEdge twin;
     public Face incidentFace;
     public HalfEdge next;
     public HalfEdge prev;
+    public Vector2 direction;
+
+    public bool isLeft = true;
 }
 public class Face
 {
+    public int type = 0;
     public HalfEdge outterComponent;
-    public HalfEdge innerComponent;
+    public List<HalfEdge> innerComponents = new List<HalfEdge>();
     public Vertex incidentVertex;
+    public Site site;
 }
 public class DCEL
 {

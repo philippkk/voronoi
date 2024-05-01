@@ -1,9 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
-using System.Drawing;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using System.Reflection;
+using TMPro;
 
 public class controller : MonoBehaviour
 {
@@ -23,19 +23,38 @@ public class controller : MonoBehaviour
     //public DCEL dcel;
     // Start is called before the first frame update
 
+    public DCEL dcel;
     public GameObject edge,breakPoint;
     public List<GameObject> drawable = new List<GameObject>();
+    public Dictionary<float, GameObject> drawnObject = new Dictionary<float, GameObject>();
     LineRenderer lineRenderer;
+    float lowestPoint = 99999;
+
+
+    public TMP_Text dcelText;
+
     void Start()
     {
         drawable.Add(edge);
         drawable.Add(breakPoint);
         lineRenderer = GetComponent<LineRenderer>();
         eventLine = GameObject.Find("eventline");
-        foreach(GameObject pos in pointLocations)
+
+
+        for(int i =0; i < transform.childCount; i++)
+        {
+            pointLocations.Add(transform.GetChild(i).gameObject);
+        }
+
+
+        foreach (GameObject pos in pointLocations)
         {
             Site s = new Site(new Vector2(pos.transform.position.x, pos.transform.position.y),0);
             sites.Add(s);
+            if (pos.transform.position.y < lowestPoint)
+            {
+                lowestPoint = pos.transform.position.y;
+            }
             
         }
        
@@ -131,7 +150,41 @@ public class controller : MonoBehaviour
         #endregion
 
     }
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.R))
+        {
+            //string currentSceneName = SceneManager.GetActiveScene().name;
+            //SceneManager.LoadScene(currentSceneName);
+            sites.Clear();
+            foreach (GameObject pos in pointLocations)
+            {
+                Site s = new Site(new Vector2(pos.transform.position.x, pos.transform.position.y), 0);
+                sites.Add(s);
+                if (pos.transform.position.y < lowestPoint)
+                {
+                    lowestPoint = pos.transform.position.y;
+                }
+            }
 
+            foreach (GameObject g in drawnObjects)
+            {
+                if (g != null)
+                {
+                    if (g.GetComponent<arcController>() == null)
+                    {
+                        Destroy(g);
+                    }
+                }
+            }
+            drawnObjects.RemoveAll(s => s == null);
+            ClearLog();
+            eventLinePos = eventLine.transform.position;
+            f = new fortune();
+            dcel = f.CalcVoronoi(sites, eventLine.transform.position.y, drawable, drawnObjects,lowestPoint);
+
+        }
+    }
     #region old
     //void genRandomPoints()
     //{
@@ -238,26 +291,236 @@ public class controller : MonoBehaviour
     // Update is called once per frame
     void FixedUpdate()
     {
+ 
         if (eventLinePos != eventLine.transform.position)
         {
-            foreach(GameObject g in drawnObjects)
-            {
-                Destroy(g);
-             
+                foreach (GameObject g in drawnObjects)
+                {
+                if (g != null)
+                {
+                    if (g.GetComponent<arcController>() == null)
+                    {
+                        Destroy(g);
+                    }
+                }
+                }
+                drawnObjects.RemoveAll(s => s == null);
+                ClearLog();
+                eventLinePos = eventLine.transform.position;
+                f = new fortune();
+                dcel = f.CalcVoronoi(sites, eventLine.transform.position.y, drawable, drawnObjects,lowestPoint);
+                dcelText.text = "";
+
+
+                foreach (Vertex v in dcel.vertices)
+                {
+                if (v.bound)
+                {
+                    dcelText.text += "b" + (v.boundIndex) + " " + v.point + " e";
+                }
+                else
+                {
+                    dcelText.text += "v" + (dcel.vertices.IndexOf(v) + 1) + " " + v.point + " e";
+
+                }
+                if(v.incidentEdge.origin != null)
+                {
+                    if (v.incidentEdge.origin.bound)
+                    {
+                        dcelText.text += "b" + v.incidentEdge.origin.boundIndex;
+                    }
+                    else
+                    {
+                        dcelText.text += (dcel.vertices.IndexOf(v.incidentEdge.origin) + 1);
+                    }
+                }
+                else { dcelText.text += 0; }
+               if(v.incidentEdge.destination  != null)
+                {
+                    if (v.incidentEdge.destination.bound)
+                    {
+                        dcelText.text += ",b" + v.incidentEdge.destination.boundIndex;
+                    }
+                    else
+                    {
+                        dcelText.text += "," + (dcel.vertices.IndexOf(v.incidentEdge.destination) + 1);
+                    }
+                }
+                else { dcelText.text += ",0"; }
+                dcelText.text += "\n";
             }
-            ClearLog();
-            drawnObjects.Clear();
-            eventLinePos = eventLine.transform.position;
-            f = new fortune();
-            f.CalcVoronoi(sites,eventLine.transform.position.y,drawable,drawnObjects);
-        }
-        if (Input.GetKeyDown(KeyCode.R))
-        {
-            string currentSceneName = SceneManager.GetActiveScene().name;
-            SceneManager.LoadScene(currentSceneName);
+            dcelText.text += "\n";
+            foreach (Face f in dcel.faces)
+                {
+                    if(f.type == 1)
+                    {
+                        dcelText.text += "uf nil e";
+                    if(f.outterComponent == null) { continue; }
+                    if (f.outterComponent.origin.bound)
+                    {
+                        dcelText.text += "b" + f.outterComponent.origin.boundIndex;
+                    }
+                    else
+                    {
+                        dcelText.text += "b"+(dcel.vertices.IndexOf(f.outterComponent.origin) + 1);
+                    }
+                    if (f.outterComponent.destination.bound)
+                    {
+                        dcelText.text += ",b" + f.outterComponent.destination.boundIndex;
+                    }
+                    else
+                    {
+                        dcelText.text += "," + (dcel.vertices.IndexOf(f.outterComponent.destination) + 1);
+                    }
+                    }
+                    else
+                    {
+                        dcelText.text += "f" + (dcel.faces.IndexOf(f) + 1);
+                        if (f.outterComponent == null)
+                        {
+                            dcelText.text += " nil";
+                        }
+                        else
+                        {
+                            dcelText.text += " e" + (dcel.vertices.IndexOf(f.outterComponent.origin) + 1) + "," + (dcel.vertices.IndexOf(f.outterComponent.destination) + 1);
+                        }
+                        if (f.innerComponents.Count == 0)
+                        {
+                            dcelText.text += " nil";
+                        }
+                        else
+                        {
+                            dcelText.text += "todo";
+                        }
+                        dcelText.text += "\n";
+                    }
+                    
+                }
+            dcelText.text += "\n";
+            foreach (HalfEdge e in dcel.edges)
+                {
+                dcelText.text += "e";
+                if (e.origin == null) { continue; }
+                if (e.origin.bound)
+                {
+                    dcelText.text += "b" + e.origin.boundIndex;
+                }
+                else
+                {
+                    dcelText.text += (dcel.vertices.IndexOf(e.origin) + 1);
+                }
+                if (e.destination.bound)
+                {
+                    dcelText.text += ",b" + e.destination.boundIndex;
+                }
+                else
+                {
+                    dcelText.text += ","+(dcel.vertices.IndexOf(e.destination) + 1);
+                }
 
-        }
 
+                if (e.origin == null){dcelText.text += " nil";}
+                    else
+                    {
+                    if (e.origin.bound)
+                    {
+                        dcelText.text += " b" + e.origin.boundIndex;
+                    }
+                    else
+                    {
+                        dcelText.text += " v" + (dcel.vertices.IndexOf(e.origin) + 1);
+                    }
+                    
+                    }
+
+
+
+                    if(e.twin == null){dcelText.text += " nil";}
+                    else
+                    {
+                    dcelText.text += " e";
+                    if (e.twin.origin != null)
+                    {
+                        if (e.twin.origin.bound)
+                        {
+                            dcelText.text += "b" + e.twin.origin.boundIndex;
+                        }
+                        else
+                        {
+                            dcelText.text += (dcel.vertices.IndexOf(e.twin.origin) + 1);
+                        }
+                    }
+
+                    if(e.twin.destination != null)
+                    {
+                        if (e.twin.destination.bound)
+                        {
+                            dcelText.text += ",b" + e.twin.destination.boundIndex;
+                        }
+                        else
+                        {
+                            dcelText.text += "," + (dcel.vertices.IndexOf(e.twin.destination) + 1);
+                        }
+                    }
+                       
+                        
+                     }
+                    if (e.incidentFace == null){dcelText.text += " nil";}
+                    else
+                    {
+                    dcelText.text += " f" + dcel.faces.IndexOf(e.incidentFace);
+                    }
+                    if(e.next == null){dcelText.text += " nil";}
+                    else
+                    {
+                    dcelText.text += " e";
+                    if (e.next.origin.bound)
+                    {
+                        dcelText.text += "b" + e.next.origin.boundIndex;
+                    }
+                    else
+                    {
+                        dcelText.text += (dcel.vertices.IndexOf(e.next.origin) + 1);
+                    }
+                    if (e.next.destination.bound)
+                    {
+                        dcelText.text += ",b" + e.next.destination.boundIndex;
+                    }
+                    else
+                    {
+                        dcelText.text += "," + (dcel.vertices.IndexOf(e.next.destination) + 1);
+                    }
+                }
+                    if(e.prev == null){dcelText.text += " nil";}
+                    else
+                    {
+                    dcelText.text += " e";
+                    if (e.prev.origin.bound)
+                    {
+                        dcelText.text += "b" + e.prev.origin.boundIndex;
+                    }
+                    else
+                    {
+                        dcelText.text += (dcel.vertices.IndexOf(e.prev.origin) + 1);
+                    }
+                    if (e.prev.destination.bound)
+                    {
+                        dcelText.text += ",b" + e.prev.destination.boundIndex;
+                    }
+                    else
+                    {
+                        dcelText.text += "," + (dcel.vertices.IndexOf(e.prev.destination) + 1);
+                    }
+                }
+                dcelText.text += "\n";
+                }
+                Debug.Log("vertex count: " + dcel.vertices.Count + " edge count: " + dcel.edges.Count+ " face count: "+ dcel.faces.Count);
+            }
+         
+        
+        
+       
+       
     }
 
 

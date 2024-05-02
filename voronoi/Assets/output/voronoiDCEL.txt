@@ -1,0 +1,16 @@
+
+b1 (9984.00, 9984.00) eb1,b2
+b2 (-9984.00, 9984.00) eb2,b3
+b3 (-9984.00, -9984.00) eb3,b4
+b4 (9984.00, -9984.00) eb4,b1
+
+uf nil eb1,b4
+
+False (0.00, 0.00) eb2,b1 b2 eb1,b2 c1 eb3,b2 eb1,b4
+False (0.00, 0.00) eb1,b2 b1 eb2,b1 nil eb2,b3 eb4,b1
+False (0.00, 0.00) eb3,b2 b3 eb2,b3 c1 eb4,b3 eb2,b1
+False (0.00, 0.00) eb2,b3 b2 eb3,b2 nil eb3,b4 eb1,b2
+False (0.00, 0.00) eb4,b3 b4 eb3,b4 c1 eb1,b4 eb3,b2
+False (0.00, 0.00) eb3,b4 b3 eb4,b3 nil eb4,b1 eb2,b3
+False (0.00, 0.00) eb1,b4 b1 eb4,b1 c1 eb2,b1 eb4,b3
+False (0.00, 0.00) eb4,b1 b4 eb1,b4 nil eb1,b2 eb3,b4

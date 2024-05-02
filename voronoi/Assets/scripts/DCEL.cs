@@ -280,14 +280,21 @@ public class HalfEdge
     public HalfEdge prev;
     public Vector2 direction;
 
+
+
+    public float slope; //for edge case intersection stuff : )
+    public float midX, midY;
     public bool isLeft = true;
+    public bool fromCirclEvent = false;
+    public bool isTwin = false;
+    public bool dontUse = false;
 }
 public class Face
 {
     public int type = 0;
     public HalfEdge outterComponent;
     public HalfEdge innerComponent;
-    public Vertex incidentVertex;
+    //public Vertex incidentVertex;
     public Site site;
 }
 public class DCEL

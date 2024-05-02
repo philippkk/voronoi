@@ -47,6 +47,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   start: {x: 0, y: 0}
   end: {x: 0, y: 0}
+  dir: {x: 0, y: 0}
   lineKey: 0
 --- !u!120 &7842001548753474803
 LineRenderer:
@@ -95,7 +96,7 @@ LineRenderer:
   - {x: 0, y: 0, z: 1}
   m_Parameters:
     serializedVersion: 3
-    widthMultiplier: 1
+    widthMultiplier: 0.5
     widthCurve:
       serializedVersion: 2
       m_Curve:

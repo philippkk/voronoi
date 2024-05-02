@@ -400,34 +400,7 @@ public class SplayTree
 }
 
 /*
- *   //Debug.LogWarning("idk if this is actualy a possible state in right");
-                //insert new edge first
-                if (n.leftEdge != beachLine.root)
-                {
-                    if (n.leftEdge.parent.left == n.leftEdge)
-                    {
-                        n.leftEdge.parent.left = edgeR;
-                    }
-                    else
-                    {
-                        n.leftEdge.parent.right = edgeR;
-                    }
-                    edgeR.parent = n.leftEdge.parent;
-                }
-                else
-                {
-                    //Debug.LogWarning("edge is now root");
-
-                    beachLine.root = edgeR;
-                }
-                n.leftEdge.left.parent = edgeR;
-                edgeR.left = n.leftEdge.left;
-                //set sibling in its spots
-                edgeR.right = n.rightEdge.right;
-                n.rightEdge.right.parent = edgeR;
- * 
- * 
- * 
+ *   
  * 
  *  Vector2? CheckForIntersection(Vector2 line1Start, Vector2 line1End,Vector2 line2Start,Vector2 line2End, List<GameObject> drawnOjects)
     {
@@ -452,6 +425,10 @@ public class SplayTree
             
         }
     }
-
+                                            midx       midy
+    public float calcYline(float m, float x, float Xx, float Yy)
+    {
+        return m * (x - Xx) + Yy;
+    }
  * 
  */

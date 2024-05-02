@@ -294,7 +294,7 @@ public class Face
     public int type = 0;
     public HalfEdge outterComponent;
     public HalfEdge innerComponent;
-    //public Vertex incidentVertex;
+    public Vertex incidentVertex;
     public Site site;
 }
 public class DCEL

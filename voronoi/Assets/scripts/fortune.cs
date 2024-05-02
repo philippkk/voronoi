@@ -1478,22 +1478,18 @@ public class fortune
 
         foreach(Face f in dcel.faces)
         {
-            //Face dFace = new Face();
 
             if(f.type == 1) // face is uf
             {
                 continue;
             }
             Vertex dSite = new Vertex();
+            Face dFace = new Face();
 
 
-            
-//            Debug.LogWarning("beep");
-            
-            //if(f.site == null)
-            //{
-            //    continue;
-            //}
+
+            //            Debug.LogWarning("beep");
+
             if ((delaunayDcel.vertices.Find((x) => x.point == f.site.point)) != null)
             {
                 dSite = delaunayDcel.vertices.Find((x) => x.point == f.site.point);
@@ -1501,7 +1497,6 @@ public class fortune
             else
             {
                 dSite.point = f.site.point;
-                //delaunayDcel.faces.Add(dFace);
                 delaunayDcel.vertices.Add(dSite);
             }
             //Debug.LogWarning("DSITE: " + dSite.point);
@@ -1509,6 +1504,7 @@ public class fortune
             int uhoh = 0;
             do
             {
+               
                 //Debug.LogWarning("current edge " + dcel.edges.IndexOf(currentEdge));
                 uhoh++;
                 if(uhoh > 20)
@@ -1532,7 +1528,28 @@ public class fortune
                 }
                 if (currentEdge.twin.incidentFace.type != 1) //if uf
                 {
-                    if ((delaunayDcel.vertices.Find((x) => x.point == currentEdge.twin.incidentFace.site.point)) != null)
+
+                    if (delaunayDcel.faces.Find((x) => x.incidentVertex == f.incidentVertex)==null)
+                    {
+                        if (f.incidentVertex != null)
+                        {
+                            delaunayDcel.faces.Add(dFace);
+                            dFace.incidentVertex = f.incidentVertex;
+                            Site site = new Site(f.incidentVertex.point,0);
+                            dFace.site = site;
+                            dFace.site.point = f.incidentVertex.point;
+                            Debug.LogWarning("beep");
+
+                        }
+                       
+                    }
+                    else
+                    {
+                        
+
+                    }
+
+                    if ((delaunayDcel.vertices.Find((x) => x.point == currentEdge.twin.incidentFace.site.point) != null))
                     {
                         //Debug.LogWarning("Here");
                         connectingEdge.destination = delaunayDcel.vertices.Find((x) => x.point == currentEdge.twin.incidentFace.site.point);
@@ -1540,12 +1557,15 @@ public class fortune
                     else
                     {
                         //Debug.LogWarning("no here");
-                        delaunayDcel.vertices.Add(connectingSite);
                         connectingSite.point = currentEdge.twin.incidentFace.site.point;
+                        delaunayDcel.vertices.Add(connectingSite);
+                       
                         connectingEdge.destination = connectingSite;
+                        connectingEdge.incidentFace = dFace;
+
                     }
                     dSite.incidentEdge = connectingEdge;
-                   // dFace.outterComponent = connectingEdge;
+                    dFace.outterComponent = connectingEdge;
 
 
                     if (delaunayDcel.edges.Find((x) => x.destination == connectingEdge.origin && x.origin == connectingEdge.destination) == null)
@@ -1568,6 +1588,35 @@ public class fortune
 
             } while (currentEdge != f.outterComponent);
             Debug.Log("visited "+uhoh+" edges");
+        }
+
+        List<HalfEdge> edgetToad = new List<HalfEdge>();
+        foreach(HalfEdge e in delaunayDcel.edges)
+        {
+            HalfEdge twin = new HalfEdge();
+            twin.twin = e;
+            e.twin = twin;
+            twin.destination = e.origin;
+            twin.origin = e.destination;
+            edgetToad.Add(twin);
+            twin.incidentFace = e.incidentFace;
+        }
+        foreach(HalfEdge e in edgetToad) { delaunayDcel.edges.Add(e); }
+
+        foreach(HalfEdge e in delaunayDcel.edges)
+        {
+            if(e.next == null)
+            {
+                HalfEdge found = delaunayDcel.edges.Find((x) => x.origin == e.destination);
+                e.next = found;
+                found.prev = e;
+            }
+            if(e.prev == null)
+            {
+                HalfEdge found = delaunayDcel.edges.Find((x) => x.destination == e.origin);
+                e.prev = found;
+                found.next = e;
+            }
         }
 
 
@@ -2039,6 +2088,7 @@ public class fortune
         v.point = n.intersection;
         dcel.vertices.Add(v);
 
+
         //new edge
         HalfEdge dcelEdge = new HalfEdge();
         dcelEdge.origin = v;
@@ -2053,19 +2103,22 @@ public class fortune
         //setting v incident edge
         v.incidentEdge = dcelEdge;
 
+
+        //v.incidentEdge.incidentFace.incidentVertex = v;
         //UPDATING STUFF IN DCEL
-        
+
         HalfEdge leftHalf = leftToUse.DCELedge;
         HalfEdge rightHalf = rightToUse.DCELedge;
         Face squeezedFace =dcel.faces.Find((x) => x.site == n.site4);
+        squeezedFace.incidentVertex = v;
         HalfEdge leftHalfTwin = new HalfEdge();
-        if (leftHalf.twin != null) { leftHalfTwin = leftHalf.twin; Debug.Log("didnt make new left twin"); }
+        if (leftHalf.twin != null) { leftHalfTwin = leftHalf.twin; }// Debug.Log("didnt make new left twin"); }
         else
         {
             dcel.edges.Add(leftHalfTwin);
         }
         HalfEdge rightHalfTwin = new HalfEdge();
-        if (rightHalf.twin != null) { rightHalfTwin = rightHalf.twin; Debug.Log("didnt make new right twin"); }
+        if (rightHalf.twin != null) { rightHalfTwin = rightHalf.twin; }//Debug.Log("didnt make new right twin"); }
         else
         {
             dcel.edges.Add(rightHalfTwin);
@@ -2078,16 +2131,19 @@ public class fortune
             //do needed stuff to left half
             leftHalf.destination = v;
             leftHalf.incidentFace.outterComponent = leftHalf;
+            //leftHalf.incidentFace.incidentVertex = leftHalf.origin;
         }
         else
         {
+            //leftHalf.incidentFace.incidentVertex = leftHalf.destination;
             //this actually means that the line is going the wrong way from expected
         }
-        if(rightHalf.origin == null)
+        if (rightHalf.origin == null)
         {
             rightHalf.origin = v;
             leftHalf.incidentFace = rightHalf.incidentFace = squeezedFace;
             rightHalf.incidentFace.outterComponent = rightHalf;
+            //rightHalf.incidentFace.incidentVertex = rightHalf.destination;
 
 
             leftHalf.next = rightHalf;
@@ -2110,6 +2166,8 @@ public class fortune
             rightHalf.destination = v;
             rightHalf.incidentFace = dcel.faces.Find((x) => x.site == n.site3);
             rightHalf.incidentFace.outterComponent = rightHalf;
+             v.incidentEdge.incidentFace.incidentVertex = v;
+            //rightHalf.incidentFace.incidentVertex = rightHalf.origin;
             leftHalf.incidentFace = squeezedFace;
 
             leftHalf.next = rightHalfTwin;
@@ -2536,4 +2594,5 @@ public class fortune
 
 
 }
+
 

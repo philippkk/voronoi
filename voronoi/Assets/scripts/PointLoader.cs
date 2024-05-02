@@ -22,6 +22,8 @@ public static class PointLoader
                     string[] coordinates = pointString.Trim('(', ' ', ')').Split(',');
 
                     // Parse the coordinates and add to the list
+                    //Debug.LogWarning(coordinates[0]);
+  
                     float x = float.Parse(coordinates[0]);
                     float y = float.Parse(coordinates[1]);
                     points.Add(new Vector2(x, y));

@@ -31,7 +31,7 @@ public class controller : MonoBehaviour
     LineRenderer lineRenderer;
     float lowestPoint = 99999;
 
-    bool showTriangle = false;
+    bool showTriangle = true;
 
 
     public TMP_Text dcelText;
@@ -433,6 +433,10 @@ public class controller : MonoBehaviour
             else
             {
                 dcelText.text += "\n";
+                if(f.incidentVertex!= null)
+                {
+                   // dcelText.text += f.incidentVertex.point + " ";
+                }
                 dcelText.text += "c" + (dcel.faces.IndexOf(f) + 1);
                 if (f.outterComponent != null)
                 {
